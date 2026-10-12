@@ -25,6 +25,12 @@ DROP TABLE IF EXISTS genre;
 --   CHECK 는 결과가 거짓(0)일 때만 막고 NULL 은 통과시키므로 '=' 로는 잘못된 날짜가 들어간다.
 --   IS 는 NULL 을 하나의 값처럼 비교해 NULL IS '2024-13-01' → 거짓 → 거부된다.
 --   ('2024-02-30' 은 date() 가 '2024-03-01' 로 바꿔 버리므로 '=' 로도 거부되지만, 월 13 은 아니다)
+--
+-- date(x, '+0 days') 처럼 '아무것도 안 바꾸는 수식어'를 붙이는 이유
+--   수식어가 없으면 일부 SQLite 버전은 입력한 연·월·일을 검증 없이 그대로 출력한다.
+--   CI 의 Windows + Python 3.10 (SQLite 3.40.1) 에서 date('2024-02-30') 이 '2024-02-30' 을 돌려줘
+--   존재하지 않는 날짜가 통과했다 (SQLite 3.45 에서는 '2024-03-01').
+--   수식어를 붙이면 날짜를 율리우스일로 계산한 뒤 다시 날짜로 바꾸므로 버전과 상관없이 '2024-03-01' 이 되어 거부된다.
 
 -- -----------------------------------------------------------------------------
 -- genre: 장르 (부모 테이블)
@@ -44,7 +50,7 @@ CREATE TABLE member (
     nickname     TEXT    NOT NULL UNIQUE,             -- 리뷰에 표시되는 이름: 중복 불가
     birth_year   INTEGER CHECK (birth_year BETWEEN 1900 AND 2026),
     joined_at    TEXT    NOT NULL                     -- 날짜: ISO-8601 'YYYY-MM-DD' (SQLite 에는 DATE 타입이 없다)
-                 CHECK (date(joined_at) IS joined_at),-- [SQLite 전용] date() 로 실제 존재하는 날짜인지 검사 (아래 주의 참고)
+                 CHECK (date(joined_at, '+0 days') IS joined_at),  -- [SQLite 전용] 실제 존재하는 날짜인지 검사 (위 주의 참고)
     status       TEXT    NOT NULL DEFAULT 'ACTIVE'
                  CHECK (status IN ('ACTIVE', 'DORMANT', 'WITHDRAWN'))
 );
@@ -59,7 +65,7 @@ CREATE TABLE movie (
                   ON UPDATE CASCADE
                   ON DELETE RESTRICT,                 -- 영화가 남아 있는 장르는 지울 수 없다
     title         TEXT    NOT NULL,
-    release_date  TEXT    NOT NULL CHECK (date(release_date) IS release_date), -- [SQLite 전용] date()
+    release_date  TEXT    NOT NULL CHECK (date(release_date, '+0 days') IS release_date), -- [SQLite 전용] date()
     running_time  INTEGER NOT NULL CHECK (running_time > 0),                   -- 분 단위
     country       TEXT    NOT NULL,
     director      TEXT    NOT NULL,
@@ -80,7 +86,7 @@ CREATE TABLE review (
     rating      INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),   -- 별점 1~5 정수
     content     TEXT,                                 -- 별점만 남기고 글은 비워도 된다 (NULL 허용)
     created_at  TEXT    NOT NULL
-                CHECK (datetime(created_at) IS created_at),         -- [SQLite 전용] 'YYYY-MM-DD HH:MM:SS'
+                CHECK (datetime(created_at, '+0 days') IS created_at),  -- [SQLite 전용] 'YYYY-MM-DD HH:MM:SS'
     UNIQUE (member_id, movie_id)                      -- 한 회원은 한 영화에 리뷰 1개만
 );
 

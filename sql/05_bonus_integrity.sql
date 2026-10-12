@@ -39,7 +39,7 @@ INSERT INTO movie (genre_id, title, release_date, running_time, country, directo
 VALUES (2, '날짜 오류 영화', '2024-02-30', 100, '한국', '미상');
 
 -- CHECK 를 date(x) = x 로 만들었다면 이 행은 통과했다 (date('2024-13-01') 이 NULL → CHECK 가 NULL 을 통과시킴).
--- IS 로 비교하도록 고쳐서 막힌다. 01_schema.sql 의 "날짜 CHECK 에서 '=' 대신 'IS'" 주석 참고
+-- IS 로 비교하도록 고쳐서 막힌다. '2024-02-30' 은 '+0 days' 수식어로 버전과 상관없이 막는다. 01_schema.sql 주석 참고
 -- @expect-error
 INSERT INTO movie (genre_id, title, release_date, running_time, country, director)
 VALUES (2, '13월 영화', '2024-13-01', 100, '한국', '미상');

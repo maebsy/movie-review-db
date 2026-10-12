@@ -134,7 +134,7 @@ JOIN     |--SCAN m
 | --- | --- | --- | --- |
 | FK 활성화 | `PRAGMA foreign_keys = ON` | 기본 활성 (InnoDB) | 기본 활성 |
 | 월 추출 (Q12, R01) | `strftime('%Y-%m', created_at)` | `DATE_FORMAT(created_at, '%Y-%m')` | `to_char(created_at, 'YYYY-MM')` |
-| 날짜 형식 CHECK | `CHECK (date(x) IS x)` | `DATE` 타입 사용 | `DATE` 타입 사용 |
+| 날짜 형식 CHECK | `CHECK (date(x, '+0 days') IS x)` | `DATE` 타입 사용 | `DATE` 타입 사용 |
 | 자동 증가 PK | `INTEGER PRIMARY KEY` | `INT AUTO_INCREMENT PRIMARY KEY` | `INTEGER GENERATED ALWAYS AS IDENTITY` |
 | 실행 계획 (Q17, B05) | `EXPLAIN QUERY PLAN` | `EXPLAIN` | `EXPLAIN` |
 

@@ -111,7 +111,7 @@ erDiagram
 | 1:N 관계 3개 | `genre → movie`, `member → review`, `movie → review`. `review` 는 회원과 영화의 N:M 을 잇는 연결 테이블 |
 | 삭제 정책 | 장르는 `RESTRICT`(쓰이는 장르는 못 지움), 리뷰는 회원·영화 삭제 시 `CASCADE` |
 | 중복 방지 | `UNIQUE(member_id, movie_id)` — 한 회원은 한 영화에 리뷰 1개 |
-| 날짜 | SQLite 에는 DATE 타입이 없어 ISO-8601 `TEXT` + `CHECK (date(x) IS x)` 로 실제 날짜만 허용 |
+| 날짜 | SQLite 에는 DATE 타입이 없어 ISO-8601 `TEXT` + `CHECK (date(x, '+0 days') IS x)` 로 실제 날짜만 허용 |
 | 인덱스 | `review(movie_id)` — 영화별 조회·집계에 가장 많이 쓰이고, FK 컬럼은 자동 인덱스가 없음 |
 
 설계 이유는 [`docs/design.md`](docs/design.md) 에 자세히 정리했습니다.

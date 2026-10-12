@@ -264,21 +264,23 @@ def generate(out_dir: Path, db_path: Path) -> List[str]:
     index = ["| ID | 분류 | 내용 | 결과 파일 |", "| --- | --- | --- | --- |"]
     sections: List[str] = []
     written = ["00_table_counts.txt"]
-    for name in QUERY_FILES:
-        con.close()
-        con = build(db_path)
-        preamble, blocks = parse_blocks(SQL_DIR / name)
-        for stmt in preamble:
-            execute(con, stmt, name)
-        for block in blocks:
-            outcomes = [execute(con, stmt, "{} {}".format(name, block.qid)) for stmt in block.statements]
-            filename = "{}.txt".format(block.slug)
-            (out_dir / filename).write_text(render_text(block, outcomes), encoding="utf-8")
-            written.append(filename)
-            index.append("| [{0}](#{1}) | {2} | {3} | [{4}]({4}) |".format(
-                block.qid, anchor(block), block.category, md_escape(block.title), filename))
-            sections += render_markdown(block, outcomes)
-    con.close()
+    try:
+        for name in QUERY_FILES:
+            con.close()
+            con = build(db_path)
+            preamble, blocks = parse_blocks(SQL_DIR / name)
+            for stmt in preamble:
+                execute(con, stmt, name)
+            for block in blocks:
+                outcomes = [execute(con, stmt, "{} {}".format(name, block.qid)) for stmt in block.statements]
+                filename = "{}.txt".format(block.slug)
+                (out_dir / filename).write_text(render_text(block, outcomes), encoding="utf-8")
+                written.append(filename)
+                index.append("| [{0}](#{1}) | {2} | {3} | [{4}]({4}) |".format(
+                    block.qid, anchor(block), block.category, md_escape(block.title), filename))
+                sections += render_markdown(block, outcomes)
+    finally:
+        con.close()  # 실패해도 DB 파일을 닫아야 Windows 에서 임시 폴더를 지울 수 있다
     md += ["## 목차", ""] + index + ["", "## 결과", ""] + sections
     (out_dir / "README.md").write_text("\n".join(md).rstrip() + "\n", encoding="utf-8")
     written.append("README.md")
