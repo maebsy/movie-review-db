@@ -87,6 +87,9 @@ class ConstraintBehaviourTest(unittest.TestCase):
     def test_check_unique_not_null(self):
         self.assertRejected("UPDATE review SET rating = 0 WHERE review_id = 1", "CHECK")
         self.assertRejected("UPDATE movie SET release_date = '2024-02-30' WHERE movie_id = 1", "CHECK")
+        self.assertRejected("UPDATE review SET created_at = '2024-13-01 00:00:00' WHERE review_id = 1", "CHECK")
+        self.assertRejected("UPDATE member SET joined_at = '2024-13-01' WHERE member_id = 1", "CHECK")  # '=' 였다면 통과됨
+        self.assertRejected("UPDATE member SET joined_at = '2024/01/01' WHERE member_id = 1", "CHECK")
         self.assertRejected("INSERT INTO review (member_id, movie_id, rating, created_at) "
                             "SELECT member_id, movie_id, 3, created_at FROM review WHERE review_id = 1", "UNIQUE")
         self.assertRejected("UPDATE member SET email = NULL WHERE member_id = 1", "NOT NULL")

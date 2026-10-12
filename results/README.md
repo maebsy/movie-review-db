@@ -924,7 +924,18 @@ VALUES (2, '날짜 오류 영화', '2024-02-30', 100, '한국', '미상');
 ```
 
 ```text
-Error (예상된 오류): CHECK constraint failed: date(release_date) = release_date
+Error (예상된 오류): CHECK constraint failed: date(release_date) IS release_date
+```
+
+_CHECK 를 date(x) = x 로 만들었다면 이 행은 통과했다 (date('2024-13-01') 이 NULL → CHECK 가 NULL 을 통과시킴). IS 로 비교하도록 고쳐서 막힌다. 01_schema.sql 의 "날짜 CHECK 에서 '=' 대신 'IS'" 주석 참고_
+
+```sql
+INSERT INTO movie (genre_id, title, release_date, running_time, country, director)
+VALUES (2, '13월 영화', '2024-13-01', 100, '한국', '미상');
+```
+
+```text
+Error (예상된 오류): CHECK constraint failed: date(release_date) IS release_date
 ```
 
 ```sql
