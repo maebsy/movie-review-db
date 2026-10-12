@@ -21,6 +21,26 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Schema, constraints, query requirements
-        run: python -m unittest discover -s tests -t . -v
+        shell: bash
+        run: |
+          python --version; python -c "import sqlite3; print('SQLite', sqlite3.sqlite_version)"
+          python -m unittest discover -s tests -t . -v 2>&1 | tee unittest.log
+          exit "${PIPESTATUS[0]}"
       - name: Results are up to date
         run: python scripts/run_all.py --check
+      - name: Report failures as annotations
+        if: failure()
+        shell: bash
+        run: |
+          [ -f unittest.log ] || exit 0
+          python - <<'PY'
+          import re
+          text = "\n" + open("unittest.log", encoding="utf-8", errors="replace").read()
+          blocks = re.split(r"\n(?==+\n(?:FAIL|ERROR): )", text)
+          for b in blocks[1:]:
+              msg = b.strip("=\n")[:3000].replace("%", "%25").replace("\r", "").replace("\n", "%0A")
+              print("::error title=unittest::" + msg)
+          for line in text.splitlines():
+              if "[실패]" in line:
+                  print("::error title=run_all --check::" + line[:3000])
+          PY
