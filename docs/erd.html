@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>movie-review-db ERD</title>
+<!--
+  ERD 원본. 브라우저로 열면 그대로 보이고, docs/erd.png 는 이 파일을 캡처한 이미지입니다.
+  표기: PK 기본키 · FK 외래키 · UQ 유일 · NN NOT NULL · CK CHECK · IDX 인덱스
+  관계선(크로우풋): 부모 쪽 ‖ = 정확히 1 / 자식 쪽 ○< = 0개 이상
+-->
+<style>
+  :root { --line: #475569; --border: #cbd5e1; --muted: #64748b; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #ffffff; font-family: "Noto Sans CJK KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; color: #0f172a; }
+  .canvas { position: relative; width: 1860px; height: 580px; }
+  h1 { position: absolute; left: 40px; top: 22px; margin: 0; font-size: 26px; font-weight: 700; }
+  h1 span { font-weight: 400; color: var(--muted); font-size: 20px; margin-left: 10px; }
+  .legend { position: absolute; left: 40px; top: 64px; font-size: 14px; color: var(--muted); }
+  .table { position: absolute; border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; background: #fff;
+           box-shadow: 0 2px 6px rgba(15, 23, 42, .06); }
+  .table .head { height: 44px; display: flex; align-items: center; gap: 10px; padding: 0 14px; color: #fff; font-size: 17px; }
+  .table .head b { font-size: 18px; }
+  .table .head span { opacity: .85; font-size: 14px; }
+  .row { height: 34px; display: grid; grid-template-columns: 31% 29% 40%; border-top: 1px solid #e2e8f0; font-size: 14px; }
+  .row > div { padding: 0 10px; display: flex; align-items: center; white-space: nowrap; }
+  .row .key { font-weight: 700; }
+  .row .fk { font-style: italic; }
+  .row .type { color: var(--muted); font-family: "DejaVu Sans Mono", Consolas, monospace; font-size: 12.5px; }
+  .row .tags { font-size: 12.5px; }
+  .badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 11.5px; font-weight: 700; margin-right: 4px; }
+  .pk { background: #fef3c7; color: #92400e; }
+  .fkb { background: #dbeafe; color: #1e40af; }
+  .note { height: 34px; display: flex; align-items: center; padding: 0 12px; background: #f8fafc; border-top: 1px solid #e2e8f0;
+          font-size: 13px; color: #334155; }
+  svg { position: absolute; left: 0; top: 0; overflow: visible; }
+  .rel { font-size: 13px; fill: #334155; }
+</style>
+</head>
+<body>
+<div class="canvas">
+  <h1>movie-review-db<span>영화 평점 서비스 ERD · SQLite</span></h1>
+  <div class="legend">PK 기본키 · FK 외래키 · UQ 유일 · NN NOT NULL · CK CHECK · IDX 인덱스 &nbsp;|&nbsp; 관계선: 부모 쪽 ‖ 정확히 1 &nbsp;—&nbsp; 자식 쪽 ○&lt; 0개 이상</div>
+
+  <!-- genre: left -->
+  <div class="table" style="left:30px; top:250px; width:320px;">
+    <div class="head" style="background:#1e3a8a"><b>genre</b><span>장르</span></div>
+    <div class="row"><div class="key">genre_id</div><div class="type">INTEGER</div><div class="tags"><span class="badge pk">PK</span></div></div>
+    <div class="row"><div>name</div><div class="type">TEXT</div><div class="tags">NN · UQ</div></div>
+    <div class="row"><div>description</div><div class="type">TEXT</div><div class="tags"></div></div>
+  </div>
+
+  <!-- movie: center-left -->
+  <div class="table" style="left:490px; top:200px; width:400px;">
+    <div class="head" style="background:#0f766e"><b>movie</b><span>영화</span></div>
+    <div class="row"><div class="key">movie_id</div><div class="type">INTEGER</div><div class="tags"><span class="badge pk">PK</span></div></div>
+    <div class="row"><div class="fk">genre_id</div><div class="type">INTEGER</div><div class="tags"><span class="badge fkb">FK</span>NN · RESTRICT</div></div>
+    <div class="row"><div>title</div><div class="type">TEXT</div><div class="tags">NN</div></div>
+    <div class="row"><div>release_date</div><div class="type">TEXT(date)</div><div class="tags">NN · CK 실제 날짜</div></div>
+    <div class="row"><div>running_time</div><div class="type">INTEGER</div><div class="tags">NN · CK &gt; 0</div></div>
+    <div class="row"><div>country</div><div class="type">TEXT</div><div class="tags">NN</div></div>
+    <div class="row"><div>director</div><div class="type">TEXT</div><div class="tags">NN</div></div>
+    <div class="note">UQ(title, release_date) — 리메이크는 개봉일로 구분</div>
+  </div>
+
+  <!-- review: center-right -->
+  <div class="table" style="left:1030px; top:200px; width:400px;">
+    <div class="head" style="background:#9a3412"><b>review</b><span>리뷰</span></div>
+    <div class="row"><div class="key">review_id</div><div class="type">INTEGER</div><div class="tags"><span class="badge pk">PK</span></div></div>
+    <div class="row"><div class="fk">member_id</div><div class="type">INTEGER</div><div class="tags"><span class="badge fkb">FK</span>NN · CASCADE</div></div>
+    <div class="row"><div class="fk">movie_id</div><div class="type">INTEGER</div><div class="tags"><span class="badge fkb">FK</span>NN · CASCADE · IDX</div></div>
+    <div class="row"><div>rating</div><div class="type">INTEGER</div><div class="tags">NN · CK 1~5</div></div>
+    <div class="row"><div>content</div><div class="type">TEXT</div><div class="tags">NULL 허용 (별점만 가능)</div></div>
+    <div class="row"><div>created_at</div><div class="type">TEXT(datetime)</div><div class="tags">NN · CK 실제 일시</div></div>
+    <div class="note">UQ(member_id, movie_id) — 한 회원은 한 영화에 리뷰 1개</div>
+  </div>
+
+  <!-- member: right -->
+  <div class="table" style="left:1570px; top:150px; width:260px;">
+    <div class="head" style="background:#1e3a8a"><b>member</b><span>회원</span></div>
+    <div class="row" style="grid-template-columns: 50% 50%"><div class="key">member_id</div><div class="tags"><span class="badge pk">PK</span>INTEGER</div></div>
+    <div class="row" style="grid-template-columns: 50% 50%"><div>email</div><div class="tags">NN · UQ</div></div>
+    <div class="row" style="grid-template-columns: 50% 50%"><div>nickname</div><div class="tags">NN · UQ</div></div>
+    <div class="row" style="grid-template-columns: 50% 50%"><div>birth_year</div><div class="tags">CK 1900~2026</div></div>
+    <div class="row" style="grid-template-columns: 50% 50%"><div>joined_at</div><div class="tags">NN · CK 날짜</div></div>
+    <div class="row" style="grid-template-columns: 50% 50%"><div>status</div><div class="tags">NN · CK 3가지</div></div>
+    <div class="note" style="font-size:12px">ACTIVE / DORMANT / WITHDRAWN</div>
+  </div>
+
+  <svg width="1860" height="580" viewBox="0 0 1860 580" aria-hidden="true">
+    <defs>
+      <!-- 자식 쪽: 0개 이상 (○<) -->
+      <marker id="many" viewBox="0 0 30 22" refX="28" refY="11" markerWidth="30" markerHeight="22" orient="auto" markerUnits="userSpaceOnUse">
+        <path d="M28 11 L16 2 M28 11 L16 20 M28 11 L16 11" stroke="#475569" stroke-width="2" fill="none"/>
+        <circle cx="9" cy="11" r="5" stroke="#475569" stroke-width="2" fill="#fff"/>
+      </marker>
+    </defs>
+    <g stroke="#475569" stroke-width="2" fill="none">
+      <!-- 좌표: 헤더 44px + 행 34px → 행 중심 y = top + 44 + 34 × 행번호 + 17 -->
+      <!-- genre.genre_id (y=311) → movie.genre_id (y=295) -->
+      <path d="M350 311 H420 V295 H490" marker-end="url(#many)"/>
+      <path d="M358 303 V319 M364 303 V319"/>
+      <!-- movie.movie_id (y=261) → review.movie_id (y=329) -->
+      <path d="M890 261 H960 V329 H1030" marker-end="url(#many)"/>
+      <path d="M898 253 V269 M904 253 V269"/>
+      <!-- member.member_id (y=211) → review.member_id (y=295) -->
+      <path d="M1570 211 H1500 V295 H1430" marker-end="url(#many)"/>
+      <path d="M1562 203 V219 M1556 203 V219"/>
+    </g>
+    <g class="rel">
+      <text x="362" y="352">1 : N</text><text x="362" y="370">한 장르에</text><text x="362" y="388">여러 영화</text>
+      <text x="902" y="372">1 : N</text><text x="902" y="390">한 영화에</text><text x="902" y="408">여러 리뷰</text>
+      <text x="1442" y="340">1 : N</text><text x="1442" y="358">한 회원이</text><text x="1442" y="376">여러 리뷰</text>
+    </g>
+  </svg>
+</div>
+</body>
+</html>
