@@ -1,0 +1,15 @@
+# 생성되는 DB 파일 (python scripts/run_all.py 로 언제든 다시 만든다)
+*.db
+*.db-journal
+*.sqlite
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
