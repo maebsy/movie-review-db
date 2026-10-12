@@ -1,0 +1,6 @@
+B08 [보너스: 정합성] FK 위반 ② 존재하지 않는 장르(99)로 영화를 INSERT
+source: sql/05_bonus_integrity.sql
+
+sqlite> INSERT INTO movie (genre_id, title, release_date, running_time, country, director)
+   ...> VALUES (99, '장르가 없는 영화', '2024-10-01', 100, '한국', '미상');
+Error (예상된 오류): FOREIGN KEY constraint failed

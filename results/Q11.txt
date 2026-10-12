@@ -1,0 +1,27 @@
+Q11 [집계] 회원별 리뷰 수 · 평균 준 별점 · 총 관람 시간(분) — 활동량 순
+source: sql/03_queries.sql
+
+sqlite> SELECT mb.nickname,
+   ...>        COUNT(*)                  AS review_count,
+   ...>        ROUND(AVG(r.rating), 2)   AS avg_given,
+   ...>        SUM(mv.running_time)      AS total_minutes
+   ...> FROM review AS r
+   ...> INNER JOIN member AS mb ON mb.member_id = r.member_id
+   ...> INNER JOIN movie  AS mv ON mv.movie_id  = r.movie_id
+   ...> GROUP BY mb.member_id, mb.nickname
+   ...> ORDER BY review_count DESC, avg_given DESC;
+nickname   | review_count | avg_given | total_minutes
+-----------+--------------+-----------+--------------
+스릴러킹   |           10 |       3.7 |          1283
+로맨스장인 |            9 |      4.67 |          1113
+김평론     |            7 |      4.57 |           932
+주말관객   |            7 |         4 |           985
+가족나들이 |            7 |      3.86 |           885
+심야영화   |            7 |      3.86 |           971
+팝콘요정   |            6 |      4.67 |           893
+SF덕후     |            6 |       4.5 |           896
+시네필     |            6 |      4.17 |           746
+애니러버   |            6 |         4 |           695
+공포체험   |            5 |       3.8 |           631
+떠난관객   |            2 |       4.5 |           238
+(12 rows)

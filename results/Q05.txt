@@ -1,0 +1,26 @@
+Q05 [조인 (INNER)] 최근 리뷰 10개를 회원 닉네임·영화 제목과 함께 보기 (3개 테이블 조인)
+source: sql/03_queries.sql
+
+sqlite> SELECT r.created_at,
+   ...>        mb.nickname,
+   ...>        mv.title,
+   ...>        r.rating,
+   ...>        COALESCE(r.content, '(별점만 남김)') AS content
+   ...> FROM review AS r
+   ...> INNER JOIN member AS mb ON mb.member_id = r.member_id     -- review.member_id (FK) → member.member_id (PK)
+   ...> INNER JOIN movie  AS mv ON mv.movie_id  = r.movie_id      -- review.movie_id  (FK) → movie.movie_id  (PK)
+   ...> ORDER BY r.created_at DESC
+   ...> LIMIT 10;
+created_at          | nickname   | title           | rating | content
+--------------------+------------+-----------------+--------+------------------------------------------------
+2024-09-25 17:40:26 | 팝콘요정   | 듄: 파트 2      |      5 | 연출, 연기, 음악 모두 완벽
+2024-09-21 22:02:34 | 시네필     | 서울의 봄       |      5 | 연출, 연기, 음악 모두 완벽
+2024-09-17 18:14:52 | SF덕후     | 듄: 파트 2      |      5 | IMAX 로 봐야 하는 영화. 모래벌레 등장 장면 최고
+2024-09-13 12:31:05 | 심야영화   | 듄: 파트 2      |      4 | 배우들 연기가 좋았다
+2024-09-09 17:53:13 | 김평론     | 서울의 봄       |      5 | 결말을 알고 봐도 분노가 차오른다
+2024-09-05 10:54:30 | 애니러버   | 인사이드 아웃 2 |      5 | 불안이를 보고 내 얘기 같아서 울컥했다
+2024-09-01 21:38:40 | 스릴러킹   | 파묘            |      4 | 탄탄하고 재밌다. 중반이 살짝 늘어짐
+2024-08-28 12:44:52 | 주말관객   | 서울의 봄       |      5 | 인생 영화 등극
+2024-08-24 18:45:09 | 로맨스장인 | 인사이드 아웃 2 |      4 | 배우들 연기가 좋았다
+2024-08-07 18:27:39 | 스릴러킹   | 서울의 봄       |      4 | 영상미가 훌륭하다
+(10 rows)

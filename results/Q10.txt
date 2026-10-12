@@ -1,0 +1,25 @@
+Q10 [집계] 장르별 영화 수 · 리뷰 수 · 평균 별점 (영화가 없는 장르도 포함)
+source: sql/03_queries.sql
+
+sqlite> SELECT g.name                              AS genre,
+   ...>        COUNT(DISTINCT m.movie_id)          AS movie_count,   -- 리뷰 조인으로 영화 행이 복제되므로 DISTINCT
+   ...>        COUNT(r.review_id)                  AS review_count,
+   ...>        ROUND(AVG(r.rating), 2)             AS avg_rating     -- 리뷰가 없으면 AVG 는 NULL
+   ...> FROM genre AS g
+   ...> LEFT JOIN movie  AS m ON m.genre_id = g.genre_id
+   ...> LEFT JOIN review AS r ON r.movie_id = m.movie_id
+   ...> GROUP BY g.genre_id, g.name
+   ...> ORDER BY review_count DESC, g.genre_id;
+genre      | movie_count | review_count | avg_rating
+-----------+-------------+--------------+-----------
+액션       |           4 |           18 |       4.06
+드라마     |           3 |           11 |       4.73
+SF         |           2 |            9 |       4.67
+애니메이션 |           3 |            9 |       4.44
+공포       |           2 |            9 |          3
+스릴러     |           3 |            8 |       4.25
+로맨스     |           2 |            7 |       4.29
+코미디     |           1 |            4 |          4
+판타지     |           2 |            3 |       3.67
+뮤지컬     |           0 |            0 |       NULL
+(10 rows)

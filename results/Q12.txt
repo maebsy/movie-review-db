@@ -1,0 +1,22 @@
+Q12 [집계] 월별 리뷰 수와 평균 별점 추이
+source: sql/03_queries.sql
+
+-- [SQLite 전용] strftime('%Y-%m', …). MySQL: DATE_FORMAT(created_at, '%Y-%m'), PostgreSQL: to_char(created_at, 'YYYY-MM')
+sqlite> SELECT strftime('%Y-%m', created_at) AS month,
+   ...>        COUNT(*)                      AS review_count,
+   ...>        ROUND(AVG(rating), 2)         AS avg_rating
+   ...> FROM review
+   ...> GROUP BY month
+   ...> ORDER BY month;
+month   | review_count | avg_rating
+--------+--------------+-----------
+2024-01 |           12 |       4.25
+2024-02 |            9 |       4.22
+2024-03 |            7 |       4.29
+2024-04 |           12 |       3.83
+2024-05 |            9 |       3.67
+2024-06 |            9 |       4.44
+2024-07 |            6 |       4.33
+2024-08 |            7 |          4
+2024-09 |            7 |       4.71
+(9 rows)

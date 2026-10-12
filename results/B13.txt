@@ -1,0 +1,28 @@
+B13 [보너스: 정합성] FK 검사를 끄면? PRAGMA foreign_keys = OFF 상태에서는 고아 리뷰가 들어간다 [SQLite 전용]
+source: sql/05_bonus_integrity.sql
+
+sqlite> PRAGMA foreign_keys = OFF;
+OK
+
+sqlite> INSERT INTO review (review_id, member_id, movie_id, rating, content, created_at)
+   ...> VALUES (900, 999, 1, 5, 'FK 검사가 꺼져서 들어간 고아 리뷰', '2024-10-01 10:00:00');
+OK (1 row affected)
+
+-- 다시 켜도 이미 들어간 데이터는 자동으로 검사되지 않는다 → foreign_key_check 로 찾아야 한다
+sqlite> PRAGMA foreign_keys = ON;
+OK
+
+sqlite> PRAGMA foreign_key_check;
+table  | rowid | parent | fkid
+-------+-------+--------+-----
+review |   900 | member |    1
+(1 row)
+
+-- 고아 행을 정리하고 다시 확인 (위반 0건)
+sqlite> DELETE FROM review WHERE review_id = 900;
+OK (1 row affected)
+
+sqlite> PRAGMA foreign_key_check;
+table | rowid | parent | fkid
+------+-------+--------+-----
+(0 rows)

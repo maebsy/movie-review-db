@@ -1,0 +1,26 @@
+Q13 [서브쿼리] 전체 리뷰 평균 별점보다 평균이 높은 영화
+source: sql/03_queries.sql
+
+sqlite> SELECT m.title,
+   ...>        ROUND(AVG(r.rating), 2) AS avg_rating,
+   ...>        (SELECT ROUND(AVG(rating), 2) FROM review) AS overall_avg      -- 스칼라 서브쿼리: 값 1개를 돌려준다
+   ...> FROM movie AS m
+   ...> INNER JOIN review AS r ON r.movie_id = m.movie_id
+   ...> GROUP BY m.movie_id, m.title
+   ...> HAVING AVG(r.rating) > (SELECT AVG(rating) FROM review)
+   ...> ORDER BY avg_rating DESC, m.title;
+title           | avg_rating | overall_avg
+----------------+------------+------------
+서울의 봄       |       4.75 |        4.17
+기생충          |       4.71 |        4.17
+듄: 파트 2      |       4.67 |        4.17
+인터스텔라      |       4.67 |        4.17
+너의 이름은.    |        4.5 |        4.17
+비긴 어게인     |        4.5 |        4.17
+올드보이        |        4.5 |        4.17
+인사이드 아웃 2 |        4.5 |        4.17
+겟 아웃         |       4.33 |        4.17
+엘리멘탈        |       4.33 |        4.17
+탑건: 매버릭    |       4.25 |        4.17
+라라랜드        |        4.2 |        4.17
+(12 rows)

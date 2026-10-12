@@ -1,0 +1,13 @@
+B10 [보너스: 정합성] CHECK 위반: 별점 6점, 존재하지 않는 날짜, 허용되지 않는 회원 상태
+source: sql/05_bonus_integrity.sql
+
+sqlite> INSERT INTO review (member_id, movie_id, rating, content, created_at)
+   ...> VALUES (12, 1, 6, '별점 6점?', '2024-10-01 10:00:00');
+Error (예상된 오류): CHECK constraint failed: rating BETWEEN 1 AND 5
+
+sqlite> INSERT INTO movie (genre_id, title, release_date, running_time, country, director)
+   ...> VALUES (2, '날짜 오류 영화', '2024-02-30', 100, '한국', '미상');
+Error (예상된 오류): CHECK constraint failed: date(release_date) = release_date
+
+sqlite> UPDATE member SET status = 'BANNED' WHERE member_id = 1;
+Error (예상된 오류): CHECK constraint failed: status IN ('ACTIVE', 'DORMANT', 'WITHDRAWN')

@@ -1,0 +1,24 @@
+R01 [보너스: 미니 리포트] 지표 1. 월별 리뷰 활동 추이
+source: sql/06_bonus_mini_report.sql
+
+-- 호평률 = 별점 4점 이상 리뷰 비율(%). [SQLite 전용] strftime
+sqlite> SELECT strftime('%Y-%m', created_at)                                     AS month,
+   ...>        COUNT(*)                                                          AS reviews,
+   ...>        COUNT(DISTINCT member_id)                                         AS active_reviewers,
+   ...>        ROUND(AVG(rating), 2)                                             AS avg_rating,
+   ...>        ROUND(100.0 * SUM(CASE WHEN rating >= 4 THEN 1 ELSE 0 END) / COUNT(*), 1) AS positive_pct
+   ...> FROM review
+   ...> GROUP BY month
+   ...> ORDER BY month;
+month   | reviews | active_reviewers | avg_rating | positive_pct
+--------+---------+------------------+------------+-------------
+2024-01 |      12 |               11 |       4.25 |         91.7
+2024-02 |       9 |                9 |       4.22 |         88.9
+2024-03 |       7 |                7 |       4.29 |         85.7
+2024-04 |      12 |               12 |       3.83 |         66.7
+2024-05 |       9 |                7 |       3.67 |         55.6
+2024-06 |       9 |                9 |       4.44 |          100
+2024-07 |       6 |                5 |       4.33 |         83.3
+2024-08 |       7 |                7 |          4 |         85.7
+2024-09 |       7 |                7 |       4.71 |          100
+(9 rows)

@@ -1,0 +1,25 @@
+R03 [보너스: 미니 리포트] 지표 3. 장르별 만족도 — 호평률(4점 이상) · 혹평률(2점 이하)
+source: sql/06_bonus_mini_report.sql
+
+sqlite> SELECT g.name                                                                         AS genre,
+   ...>        COUNT(r.review_id)                                                             AS reviews,
+   ...>        ROUND(AVG(r.rating), 2)                                                        AS avg_rating,
+   ...>        ROUND(100.0 * SUM(CASE WHEN r.rating >= 4 THEN 1 ELSE 0 END) / COUNT(r.review_id), 1) AS positive_pct,
+   ...>        ROUND(100.0 * SUM(CASE WHEN r.rating <= 2 THEN 1 ELSE 0 END) / COUNT(r.review_id), 1) AS negative_pct
+   ...> FROM genre AS g
+   ...> INNER JOIN movie  AS m ON m.genre_id = g.genre_id
+   ...> INNER JOIN review AS r ON r.movie_id = m.movie_id
+   ...> GROUP BY g.genre_id, g.name
+   ...> ORDER BY positive_pct DESC, reviews DESC;
+genre      | reviews | avg_rating | positive_pct | negative_pct
+-----------+---------+------------+--------------+-------------
+드라마     |      11 |       4.73 |          100 |            0
+애니메이션 |       9 |       4.44 |          100 |            0
+SF         |       9 |       4.67 |          100 |            0
+스릴러     |       8 |       4.25 |         87.5 |            0
+로맨스     |       7 |       4.29 |         85.7 |            0
+액션       |      18 |       4.06 |         83.3 |            0
+코미디     |       4 |          4 |           75 |            0
+판타지     |       3 |       3.67 |         66.7 |            0
+공포       |       9 |          3 |         33.3 |         33.3
+(9 rows)

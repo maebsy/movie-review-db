@@ -1,0 +1,24 @@
+B04 [보너스: JOIN vs 서브쿼리] 세 방식의 결과가 정확히 같은지 검증 (차집합이 모두 0행이어야 함)
+source: sql/04_bonus_join_vs_subquery.sql
+
+sqlite> SELECT
+   ...>     (SELECT COUNT(*) FROM (
+   ...>         SELECT DISTINCT mb.member_id FROM member mb JOIN review r ON r.member_id = mb.member_id
+   ...>         EXCEPT
+   ...>         SELECT mb.member_id FROM member mb WHERE EXISTS (SELECT 1 FROM review r WHERE r.member_id = mb.member_id)
+   ...>     )) AS join_minus_exists,
+   ...>     (SELECT COUNT(*) FROM (
+   ...>         SELECT mb.member_id FROM member mb WHERE EXISTS (SELECT 1 FROM review r WHERE r.member_id = mb.member_id)
+   ...>         EXCEPT
+   ...>         SELECT mb.member_id FROM member mb WHERE mb.member_id IN (SELECT member_id FROM review)
+   ...>     )) AS exists_minus_in,
+   ...>     (SELECT COUNT(*) FROM (
+   ...>         SELECT mb.member_id FROM member mb WHERE mb.member_id IN (SELECT member_id FROM review)
+   ...>         EXCEPT
+   ...>         SELECT DISTINCT mb.member_id FROM member mb JOIN review r ON r.member_id = mb.member_id
+   ...>     )) AS in_minus_join,
+   ...>     (SELECT COUNT(*) FROM member mb JOIN review r ON r.member_id = mb.member_id) AS join_rows_before_distinct;
+join_minus_exists | exists_minus_in | in_minus_join | join_rows_before_distinct
+------------------+-----------------+---------------+--------------------------
+                0 |               0 |             0 |                        78
+(1 row)

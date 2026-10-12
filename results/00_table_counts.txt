@@ -1,0 +1,17 @@
+00 [검증] 테이블별 행 수와 FK 무결성 (02_seed.sql 직후)
+
+sqlite> SELECT …;
+table  | rows
+-------+-----
+genre  |   10
+member |   15
+movie  |   22
+review |   78
+
+sqlite> PRAGMA foreign_key_check;
+(위반 0건)
+
+sqlite> PRAGMA foreign_keys;
+1
+
+SQLite 3.45.1

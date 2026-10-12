@@ -1,0 +1,22 @@
+B01 [보너스: JOIN vs 서브쿼리] 요구 A ① INNER JOIN — 회원 × 리뷰 행이 늘어나므로 DISTINCT 로 중복 제거
+source: sql/04_bonus_join_vs_subquery.sql
+
+sqlite> SELECT DISTINCT mb.member_id, mb.nickname
+   ...> FROM member AS mb
+   ...> INNER JOIN review AS r ON r.member_id = mb.member_id
+   ...> ORDER BY mb.member_id;
+member_id | nickname
+----------+-----------
+        1 | 팝콘요정
+        2 | 시네필
+        3 | SF덕후
+        4 | 심야영화
+        5 | 김평론
+        6 | 애니러버
+        7 | 스릴러킹
+        8 | 주말관객
+        9 | 로맨스장인
+       10 | 공포체험
+       11 | 가족나들이
+       15 | 떠난관객
+(12 rows)

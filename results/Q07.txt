@@ -1,0 +1,14 @@
+Q07 [조인 (LEFT)] 리뷰를 한 번도 작성하지 않은 회원 찾기
+source: sql/03_queries.sql
+
+sqlite> SELECT mb.member_id, mb.nickname, mb.joined_at, mb.status
+   ...> FROM member AS mb
+   ...> LEFT JOIN review AS r ON r.member_id = mb.member_id   -- 리뷰가 없는 회원도 남기고, 리뷰 쪽 컬럼은 NULL
+   ...> WHERE r.review_id IS NULL                             -- 짝이 없었던(NULL) 행만 고른다
+   ...> ORDER BY mb.member_id;
+member_id | nickname | joined_at  | status
+----------+----------+------------+--------
+       12 | 새내기   | 2024-03-02 | ACTIVE
+       13 | 잠수중   | 2023-02-14 | DORMANT
+       14 | 눈팅족   | 2024-01-20 | ACTIVE
+(3 rows)

@@ -1,0 +1,37 @@
+Q15 [수정 (UPDATE)] 2024-06-01 이후 리뷰가 없는 ACTIVE 회원을 휴면(DORMANT)으로 전환
+source: sql/03_queries.sql
+
+-- 변경 전: 대상 회원 확인
+sqlite> SELECT mb.member_id, mb.nickname, mb.status,
+   ...>        (SELECT MAX(created_at) FROM review WHERE member_id = mb.member_id) AS last_review_at
+   ...> FROM member AS mb
+   ...> WHERE mb.status = 'ACTIVE'
+   ...>   AND NOT EXISTS (SELECT 1 FROM review AS r
+   ...>                   WHERE r.member_id = mb.member_id AND r.created_at >= '2024-06-01')
+   ...> ORDER BY mb.member_id;
+member_id | nickname   | status | last_review_at
+----------+------------+--------+--------------------
+       10 | 공포체험   | ACTIVE | 2024-05-18 16:29:19
+       11 | 가족나들이 | ACTIVE | 2024-05-25 10:46:32
+       12 | 새내기     | ACTIVE | NULL
+       14 | 눈팅족     | ACTIVE | NULL
+(4 rows)
+
+sqlite> UPDATE member
+   ...> SET status = 'DORMANT'
+   ...> WHERE status = 'ACTIVE'
+   ...>   AND NOT EXISTS (SELECT 1 FROM review AS r
+   ...>                   WHERE r.member_id = member.member_id AND r.created_at >= '2024-06-01');
+OK (4 rows affected)
+
+-- 변경 후: 상태별 회원 수
+sqlite> SELECT status, COUNT(*) AS member_count
+   ...> FROM member
+   ...> GROUP BY status
+   ...> ORDER BY status;
+status    | member_count
+----------+-------------
+ACTIVE    |            9
+DORMANT   |            5
+WITHDRAWN |            1
+(3 rows)

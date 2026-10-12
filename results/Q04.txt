@@ -1,0 +1,15 @@
+Q04 [기본 조회] 제목 검색: '의' 가 들어간 영화 (LIKE 부분 일치)
+source: sql/03_queries.sql
+
+sqlite> SELECT movie_id, title, release_date
+   ...> FROM movie
+   ...> WHERE title LIKE '%의%'
+   ...> ORDER BY release_date;
+movie_id | title                    | release_date
+---------+--------------------------+-------------
+      17 | 해리 포터와 마법사의 돌  | 2001-12-14
+      18 | 반지의 제왕: 반지 원정대 | 2001-12-31
+      22 | 7번방의 선물             | 2013-01-23
+       5 | 너의 이름은.             | 2017-01-04
+       8 | 서울의 봄                | 2023-11-22
+(5 rows)

@@ -1,0 +1,9 @@
+B09 [보너스: 정합성] FK 위반 ③ 영화가 남아 있는 장르(액션)를 DELETE → ON DELETE RESTRICT
+source: sql/05_bonus_integrity.sql
+
+sqlite> DELETE FROM genre WHERE name = '액션';
+Error (예상된 오류): FOREIGN KEY constraint failed
+
+-- 참조하는 영화가 없는 장르(뮤지컬)는 지울 수 있다 → RESTRICT 는 "쓰이는 부모"만 보호한다
+sqlite> DELETE FROM genre WHERE name = '뮤지컬';
+OK (1 row affected)

@@ -1,0 +1,26 @@
+B14 [보너스: 정합성] 해결: 부모(회원)를 먼저 만들고 자식(리뷰)을 넣는다 — 한 트랜잭션으로 묶어서
+source: sql/05_bonus_integrity.sql
+
+sqlite> BEGIN TRANSACTION;
+OK
+
+sqlite> INSERT INTO member (member_id, email, nickname, birth_year, joined_at)
+   ...> VALUES (16, 'latecomer@example.com', '늦깎이', 1994, '2024-10-01');
+OK (1 row affected)
+
+sqlite> INSERT INTO review (member_id, movie_id, rating, content, created_at)
+   ...> VALUES (16, 1, 5, '부모 행이 먼저 있으니 성공', '2024-10-02 20:00:00');
+OK (1 row affected)
+
+sqlite> COMMIT;
+OK
+
+sqlite> SELECT mb.nickname, mv.title, r.rating, r.content
+   ...> FROM review AS r
+   ...> JOIN member AS mb ON mb.member_id = r.member_id
+   ...> JOIN movie  AS mv ON mv.movie_id  = r.movie_id
+   ...> WHERE r.member_id = 16;
+nickname | title  | rating | content
+---------+--------+--------+---------------------------
+늦깎이   | 기생충 |      5 | 부모 행이 먼저 있으니 성공
+(1 row)

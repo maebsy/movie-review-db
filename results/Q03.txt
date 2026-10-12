@@ -1,0 +1,15 @@
+Q03 [기본 조회] 러닝타임 150분 이상인 긴 영화 (긴 순서, 같으면 제목순)
+source: sql/03_queries.sql
+
+sqlite> SELECT title, running_time, director
+   ...> FROM movie
+   ...> WHERE running_time >= 150
+   ...> ORDER BY running_time DESC, title;
+title                    | running_time | director
+-------------------------+--------------+----------------
+어벤져스: 엔드게임       |          181 | 루소 형제
+반지의 제왕: 반지 원정대 |          178 | 피터 잭슨
+인터스텔라               |          169 | 크리스토퍼 놀란
+듄: 파트 2               |          166 | 드니 빌뇌브
+해리 포터와 마법사의 돌  |          152 | 크리스 콜럼버스
+(5 rows)

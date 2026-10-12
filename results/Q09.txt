@@ -1,0 +1,20 @@
+Q09 [집계 (랭킹)] 평균 별점 TOP 5 영화 (리뷰 3개 이상만, 동점이면 리뷰 많은 순)
+source: sql/03_queries.sql
+
+sqlite> SELECT m.title,
+   ...>        ROUND(AVG(r.rating), 2) AS avg_rating,
+   ...>        COUNT(*)                AS review_count
+   ...> FROM movie AS m
+   ...> INNER JOIN review AS r ON r.movie_id = m.movie_id
+   ...> GROUP BY m.movie_id, m.title
+   ...> HAVING COUNT(*) >= 3                                 -- 그룹을 만든 뒤 거르는 조건은 WHERE 가 아니라 HAVING
+   ...> ORDER BY avg_rating DESC, review_count DESC, m.title
+   ...> LIMIT 5;
+title        | avg_rating | review_count
+-------------+------------+-------------
+서울의 봄    |       4.75 |            4
+기생충       |       4.71 |            7
+인터스텔라   |       4.67 |            6
+듄: 파트 2   |       4.67 |            3
+너의 이름은. |        4.5 |            4
+(5 rows)

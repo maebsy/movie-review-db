@@ -1,0 +1,36 @@
+R02 [보너스: 미니 리포트] 지표 2. 인기 영화 TOP 10 — 베이지안 가중 평점
+source: sql/06_bonus_mini_report.sql
+
+-- 가중 평점 = (v × R + m × C) / (v + m)
+-- v = 영화의 리뷰 수, R = 영화의 평균 별점, C = 전체 평균 별점, m = 최소 신뢰 리뷰 수(3)
+-- 리뷰가 적은 영화는 전체 평균(C) 쪽으로 끌어당겨, 리뷰 2개짜리 5.0 이 리뷰 7개짜리 4.7 을 이기는 왜곡을 막는다.
+sqlite> WITH overall AS (
+   ...>     SELECT AVG(rating) AS c, 3 AS m FROM review
+   ...> ),
+   ...> per_movie AS (
+   ...>     SELECT movie_id, COUNT(*) AS v, AVG(rating) AS r
+   ...>     FROM review
+   ...>     GROUP BY movie_id
+   ...> )
+   ...> SELECT mv.title,
+   ...>        pm.v                                            AS review_count,
+   ...>        ROUND(pm.r, 2)                                  AS avg_rating,
+   ...>        ROUND((pm.v * pm.r + o.m * o.c) / (pm.v + o.m), 3) AS weighted_score
+   ...> FROM per_movie AS pm
+   ...> INNER JOIN movie AS mv ON mv.movie_id = pm.movie_id
+   ...> CROSS JOIN overall AS o
+   ...> ORDER BY weighted_score DESC, review_count DESC, mv.title
+   ...> LIMIT 10;
+title           | review_count | avg_rating | weighted_score
+----------------+--------------+------------+---------------
+기생충          |            7 |       4.71 |           4.55
+인터스텔라      |            6 |       4.67 |            4.5
+서울의 봄       |            4 |       4.75 |            4.5
+듄: 파트 2      |            3 |       4.67 |          4.417
+너의 이름은.    |            4 |        4.5 |          4.357
+비긴 어게인     |            2 |        4.5 |            4.3
+올드보이        |            2 |        4.5 |            4.3
+인사이드 아웃 2 |            2 |        4.5 |            4.3
+겟 아웃         |            3 |       4.33 |           4.25
+엘리멘탈        |            3 |       4.33 |           4.25
+(10 rows)

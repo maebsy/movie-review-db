@@ -1,0 +1,27 @@
+Q16 [삭제 (DELETE)] 탈퇴(WITHDRAWN) 회원 삭제 → 그 회원의 리뷰는 ON DELETE CASCADE 로 함께 삭제
+source: sql/03_queries.sql
+
+-- 삭제 전
+sqlite> SELECT mb.nickname, mb.status, COUNT(r.review_id) AS review_count
+   ...> FROM member AS mb
+   ...> LEFT JOIN review AS r ON r.member_id = mb.member_id
+   ...> WHERE mb.status = 'WITHDRAWN'
+   ...> GROUP BY mb.member_id, mb.nickname, mb.status;
+nickname | status    | review_count
+---------+-----------+-------------
+떠난관객 | WITHDRAWN |            2
+(1 row)
+
+sqlite> DELETE FROM member
+   ...> WHERE status = 'WITHDRAWN';
+OK (1 row affected)
+
+-- 삭제 후: 회원 수와 리뷰 수 (리뷰 78 → 76, 고아 리뷰 0건)
+sqlite> SELECT (SELECT COUNT(*) FROM member) AS member_count,
+   ...>        (SELECT COUNT(*) FROM review) AS review_count,
+   ...>        (SELECT COUNT(*) FROM review AS r
+   ...>         WHERE NOT EXISTS (SELECT 1 FROM member AS mb WHERE mb.member_id = r.member_id)) AS orphan_reviews;
+member_count | review_count | orphan_reviews
+-------------+--------------+---------------
+          14 |           76 |              0
+(1 row)
