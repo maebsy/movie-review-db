@@ -222,7 +222,8 @@ movie-review-db/
     ├── design.md                      # 설계 문서
     ├── checklist.md                   # 체크리스트 답변서
     ├── bonus.md                       # [보너스] ① ② 정리
-    └── mini-report.md                 # [보너스] ③ 미니 리포트
+    ├── mini-report.md                 # [보너스] ③ 미니 리포트
+    └── presentation.html              # 동료 평가 발표 슬라이드
 ```
 
 ## 문서
@@ -233,6 +234,7 @@ movie-review-db/
 | [`docs/checklist.md`](docs/checklist.md) | 미션 체크리스트 전 항목의 근거와 답변 |
 | [`docs/bonus.md`](docs/bonus.md) | [보너스] JOIN vs 서브쿼리 비교, 정합성 위반 실험 |
 | [`docs/mini-report.md`](docs/mini-report.md) | [보너스] 핵심 지표 3개 정의 · SQL · 해석 |
+| [`docs/presentation.html`](docs/presentation.html) | 동료 평가 발표 슬라이드 70장 (브라우저로 열기, ← → 넘기기 · N 발표자 노트 · 인쇄하면 PDF) |
 | [`results/README.md`](results/README.md) | 모든 쿼리의 SQL 과 실행 결과 표 |
 
 > 샘플 데이터의 영화 정보(개봉일·러닝타임)는 실습용 참고 데이터로 실제와 다를 수 있으며, 회원과 리뷰는 모두 가상 데이터입니다.
