@@ -179,7 +179,7 @@ python -m unittest discover -s tests -t . -v   # 스키마 · 제약조건 · �
 python scripts/run_all.py --check              # results/ 가 SQL 실행 결과와 일치하는지
 ```
 
-GitHub Actions 가 push 마다 Ubuntu · Windows 에서 위 두 명령을 실행합니다.
+위 두 명령은 [`.github/workflows/sql.yml`](.github/workflows/sql.yml) 에 Ubuntu · Windows 검증 단계로 정의되어 있고, `uv run scripts/ci_local.py` 로 같은 단계를 내 컴퓨터에서 Python 버전별로 그대로 실행할 수 있습니다 (커밋된 상태 기준, Linux·macOS).
 
 ## 선택(보너스) 과제 구현 내역
 
