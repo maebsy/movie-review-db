@@ -27,7 +27,7 @@
 
 ### 방법 1. Python 스크립트 (추천, 설치 불필요)
 
-Python 3.10 이상에 포함된 `sqlite3` 모듈만 사용합니다.
+Python 3.10 이상에 포함된 `sqlite3` 모듈만 사용합니다. 기준 버전은 3.14(`.python-version`)이고, [uv](https://docs.astral.sh/uv/) 를 쓰면 `uv run python ...` 으로 같은 버전에서 실행됩니다.
 
 ```bash
 git clone https://github.com/maebsy/movie-review-db.git
