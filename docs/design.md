@@ -13,6 +13,8 @@
 | 리뷰를 안 쓰는 회원은? 오래 활동이 없는 회원은? | Q07, Q15 |
 | 탈퇴 회원 정리는? | Q16 |
 
+쿼리는 모두 17개이며, 과제가 요구한 필수 15개와 추가 2개(Q12 월별 추이, Q14 장르별 1위)로 구분합니다. 구분 기준은 [`sql/03_queries.sql`](../sql/03_queries.sql) 머리 주석에 있습니다.
+
 ## 2. 테이블을 왜 4개로 나눴나
 
 ![ERD](erd.png)
@@ -39,15 +41,24 @@
 | `movie` | 영화 | 영화 한 편 (장르 하나에 속함) | 22 |
 | `review` | 리뷰 | 회원 한 명이 영화 한 편에 남긴 평가 하나 | 78 |
 
+| 작업 | 한 시트 방식 수정 행 수 | 분리 구조 수정 행 수 |
+| --- | ---: | ---: |
+| 최다 리뷰 회원 스릴러킹의 이메일 변경 | 10 | `member` 1 |
+| 기생충의 감독·개봉일 변경 | 7 | `movie` 1 |
+
+시드 기준 영화 정보를 저장하는 횟수도 리뷰 행마다 반복하는 78회에서 영화별 22회로 줄어, 정보 수정과 누락 확인이 쉬워집니다.
+
 이제 회원 이메일은 `member` 에 한 번만 있으므로 한 곳만 고치면 되고, 리뷰가 없는 영화도 `movie` 에 존재할 수 있습니다(Q08 의 0건 영화 2편).
 
 ## 3. 관계 (1:N)
 
-| 관계 | FK | 도메인 의미 | 데이터 예시 |
-| --- | --- | --- | --- |
-| genre 1 : N movie | `movie.genre_id → genre.genre_id` | 한 장르에 여러 영화가 속한다 | 액션 → 범죄도시, 어벤져스: 엔드게임, 탑건: 매버릭, 부산행 |
-| member 1 : N review | `review.member_id → member.member_id` | 한 회원이 여러 리뷰를 쓴다 | 스릴러킹 → 리뷰 10개 (Q11) |
-| movie 1 : N review | `review.movie_id → movie.movie_id` | 한 영화에 여러 리뷰가 달린다 | 기생충 → 리뷰 7개 (Q08) |
+| 관계 | FK | 도메인 의미 | 데이터 예시 | FK NULL 허용 여부 | ON DELETE 동작과 그 영향 |
+| --- | --- | --- | --- | --- | --- |
+| genre 1 : N movie | `movie.genre_id → genre.genre_id` | 한 장르에 여러 영화가 속한다 | 액션 → 범죄도시, 어벤져스: 엔드게임, 탑건: 매버릭, 부산행 | 불가 (`NOT NULL`) | `RESTRICT`: 영화 4편이 참조하는 액션 장르 삭제는 거부됩니다(B09). `ON UPDATE CASCADE` 로 장르 키 변경은 영화에 반영됩니다. |
+| member 1 : N review | `review.member_id → member.member_id` | 한 회원이 여러 리뷰를 쓴다 | 스릴러킹 → 리뷰 10개 (Q11) | 불가 (`NOT NULL`) | `CASCADE`: 탈퇴 회원 삭제 시 리뷰도 함께 삭제되어 78 → 76개가 됩니다(Q16). |
+| movie 1 : N review | `review.movie_id → movie.movie_id` | 한 영화에 여러 리뷰가 달린다 | 기생충 → 리뷰 7개 (Q08) | 불가 (`NOT NULL`) | `CASCADE`: 시드에서 기생충 삭제 시 리뷰 7개도 삭제되어 78 → 71개가 됩니다. |
+
+모든 FK 가 `NOT NULL` 이므로, 부모가 없는 리뷰를 FK 의 NULL 값으로 우회해 저장할 수도 없습니다.
 
 "N 쪽" 테이블이 "1 쪽" 테이블의 PK 를 FK 컬럼으로 들고 있습니다. 리뷰 한 행은 자기가 어느 회원·어느 영화에 속하는지 알지만, 회원 행은 자기 리뷰 목록을 들고 있지 않습니다. 목록은 JOIN 으로 그때그때 모읍니다.
 
@@ -63,14 +74,16 @@ SQLite 의 타입은 다섯 가지 저장 클래스(NULL, INTEGER, REAL, TEXT, B
 
 | 컬럼 | 타입 | 이유 |
 | --- | --- | --- |
-| `*_id` | `INTEGER PRIMARY KEY` | SQLite 에서 `INTEGER PRIMARY KEY` 는 내부 rowid 의 별칭이라 가장 빠른 조회 경로이고, 값을 생략하면 자동으로 번호가 매겨진다 |
-| `rating` | `INTEGER` + `CHECK (1~5)` | 별점은 정수 단계값. 평균은 조회할 때 `AVG()` 로 계산(REAL)하고, 저장은 정수로 해서 4.4999… 같은 값이 섞이지 않게 함 |
-| `running_time` | `INTEGER` (분) | 계산(합계·비교)이 필요하므로 숫자. "2시간 12분" 같은 문자열은 정렬·합계가 안 됨 |
-| `birth_year` | `INTEGER` | 연도만 필요(개인정보 최소화). 나이 계산은 뺄셈 한 번 |
+| `*_id` | PK 는 `INTEGER PRIMARY KEY`, FK 는 `INTEGER NOT NULL` | PK 는 rowid 의 별칭이며 번호를 자동 부여합니다. 시드 PK 최대값은 genre/member/movie/review 순서로 10/15/22/78이지만, 증가를 고려해 최대 2^63−1까지 지원합니다(MySQL: `INT` 또는 규모에 따라 `BIGINT`). |
+| `rating` | `INTEGER` + `CHECK (1~5)` | 시드도 1~5이며 정수 별점을 저장하고 평균은 `AVG()` 로 계산합니다. 이 범위는 1바이트 이내입니다(값 1은 아래 예외). MySQL 이라면 `TINYINT` 를 씁니다. |
+| `running_time` | `INTEGER` (분) | 시드는 94~181분입니다. 운영 범위를 1~600분으로 가정하면 최대 2바이트 범위이며, MySQL 이라면 `SMALLINT` 를 씁니다. 현재 CHECK 는 `> 0` 만 강제하고 600분 상한은 가정입니다. |
+| `birth_year` | `INTEGER` | 연도만 저장하며 시드는 1978~2004입니다. CHECK 범위 1900~2026의 값은 2바이트로 저장됩니다(MySQL: `SMALLINT`). |
 | `release_date`, `joined_at` | `TEXT` `'YYYY-MM-DD'` | SQLite 에는 DATE 타입이 없다. ISO-8601 문자열은 **사전순 = 날짜순**이라 `>=` 비교·정렬이 그대로 되고, `date()`/`strftime()` 함수가 이 형식을 이해한다 |
 | `created_at` | `TEXT` `'YYYY-MM-DD HH:MM:SS'` | 같은 이유. 같은 날 여러 리뷰의 순서를 위해 시각까지 저장 |
 | `name`, `title`, `email`, `content` | `TEXT` | 길이 제한이 없는 문자열. (MySQL 이라면 `VARCHAR(n)` 으로 길이를 제한하는 것이 일반적) |
 | `status` | `TEXT` + `CHECK IN (...)` | 값이 3개로 고정되고 거의 바뀌지 않아 별도 테이블 대신 CHECK 로 허용값을 제한. 상태가 늘어나거나 상태별 설명이 필요해지면 `member_status` 테이블로 분리 |
+
+SQLite 의 일반 INTEGER 값은 크기에 따라 1·2·3·4·6·8바이트로 저장됩니다(0·1은 전용 코드로 값 저장 공간이 0바이트입니다). `INTEGER PRIMARY KEY` 는 별도의 가변 길이 rowid 로 저장되므로 이 값 크기 규칙과 구분합니다.
 
 ## 5. 제약조건
 
@@ -118,7 +131,14 @@ JOIN     |--SCAN m
          `--SEARCH r USING INDEX idx_review_movie_id (movie_id=?)     ← 영화마다 리뷰를 인덱스로 찾음
 ```
 
-- **비용**: 인덱스는 별도 B-tree 라 리뷰를 INSERT/DELETE 할 때마다 함께 갱신해야 하고 저장 공간을 씁니다. 그래서 "자주 조회하는 조건 컬럼" 에만 만들었습니다. 다음 후보는 최근 리뷰 목록(Q02, Q05)의 `ORDER BY created_at DESC LIMIT` 을 위한 `review(created_at)` 입니다.
+- **비용**: 인덱스는 별도 B-tree 라 저장 공간을 쓰고, INSERT·DELETE 때마다 함께 갱신해야 합니다. 서비스에서 쓰기가 가장 잦다고 보는 `review` 는 인덱스를 늘릴수록 쓰기 비용도 늘어납니다. 현재 78행은 SCAN 으로도 처리할 양이 작으므로, 명시적으로 만드는 인덱스는 Q17의 1개만 유지합니다.
+
+추가 후보의 우선순위는 다음과 같습니다. 시드 직후 임시 DB 에 현재 인덱스를 만든 상태를 기준으로 후보별 `EXPLAIN QUERY PLAN` 을 비교했습니다(2순위는 기존 인덱스를 대체했습니다).
+
+1. **`review(created_at)` — Q02·Q05**: 최근순 `ORDER BY created_at DESC LIMIT` 에서 `SCAN` 이 `SCAN … USING INDEX` 로 바뀌고 정렬용 `USE TEMP B-TREE FOR ORDER BY` 가 사라졌습니다. Q02의 별점 필터는 남습니다. 리뷰 INSERT·DELETE 와 작성일 변경 때 갱신 비용이 듭니다.
+2. **`review(movie_id, rating)` — Q09·Q14**: 평균 계산의 `SEARCH r USING INDEX` 가 `SEARCH r USING COVERING INDEX (movie_id=?)` 로 바뀌어 별점을 인덱스에서 읽습니다. 기존 인덱스와 겹치므로 대체할 때만 고려합니다. 키가 넓어지고 리뷰 INSERT·DELETE 외에 별점 변경도 갱신 비용이 듭니다.
+3. **`movie(genre_id)` — Q06·Q10**: Q10의 `SEARCH m USING AUTOMATIC COVERING INDEX` 가 상설 인덱스의 `SEARCH m USING COVERING INDEX` 로 바뀌어 임시 자동 인덱스를 대신합니다. Q06은 `SCAN m` 과 정렬이 그대로여서 효과를 확인하지 못했습니다. 영화 INSERT·DELETE 와 장르 변경 때 갱신 비용이 듭니다.
+4. **`movie(release_date)` — Q01**: `SCAN movie` 가 `SEARCH movie USING INDEX (release_date>?)` 로 바뀌고 정렬용 임시 B-tree 가 사라졌습니다. 영화 INSERT·DELETE 와 개봉일 변경 때 갱신 비용이 듭니다.
 
 ## 7. 쿼리 작성 원칙
 
@@ -145,4 +165,4 @@ JOIN     |--SCAN m
 
 - `python scripts/run_all.py --check` 는 SQL 을 다시 실행해 `results/` 와 비교합니다. SQL 을 고치고 결과 파일을 갱신하지 않으면 실패합니다(CI 에서 실행).
 - 실행 계획 문구는 SQLite 버전마다 조금씩 달라서(Q17, B05) 비교에서 제외합니다.
-- `tests/test_sql.py` 는 테이블 수, PK, FK, 행 수, 제약조건 동작, 쿼리 범주별 개수를 자동으로 검사합니다.
+- `tests/test_sql.py` 는 테이블 수, PK, FK, 행 수, 제약조건 동작, 쿼리 범주별 개수를 자동으로 검사합니다. 쿼리는 과제 필수 15개(기본 4 · 조인 4 · 집계 3 · 서브쿼리 1 · 수정/삭제 2 · 인덱스 1)와 추가 2개(Q12 · Q14)로 나뉘며, 필수 15개의 범주별 개수가 요구와 정확히 같은지는 `test_required_fifteen_match_categories` 가 따로 검사합니다.

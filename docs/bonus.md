@@ -99,3 +99,50 @@ FK 를 다시 켜도 **기존 데이터는 자동으로 검사되지 않습니�
 ### B10 에서 발견한 CHECK 의 함정
 
 `'2024-13-01'` 은 처음 스키마(`CHECK (date(x) = x)`)에서는 **통과했습니다.** `date('2024-13-01')` 이 NULL 이고, `NULL = '…'` 도 NULL 인데, CHECK 는 거짓일 때만 막기 때문입니다. `IS` 비교로 바꿔 해결했고, 자세한 과정은 [`checklist.md` 4-2](checklist.md#4-2-미션-수행-중-가장-어려웠던-부분과-해결-방법을-구체적으로-말할-수-있는가-) 에 있습니다.
+
+### 실제로 겪은 오류 메시지 (sqlite3 CLI 원문)
+
+위 표의 메시지를 `sqlite3` 대화형 CLI(3.46.1)에서 직접 다시 입력해 받은 출력입니다. 손으로 고치지 않았고, 화면은 [`results/screenshots/ERR.png`](../results/screenshots/ERR.png) 입니다. 시드 직후 DB 를 새로 열었으므로 `PRAGMA foreign_keys` 는 기본값 0(꺼짐)에서 시작합니다.
+
+```text
+movie-review-db$ sqlite3 -header -separator ' | ' movie_review.db
+SQLite version 3.46.1 2024-08-13 09:16:08
+Enter ".help" for usage hints.
+sqlite> PRAGMA foreign_keys;
+foreign_keys
+0
+sqlite> INSERT INTO review (member_id, movie_id, rating, created_at) VALUES (999, 1, 5, '2024-10-01 12:00:00');
+sqlite> PRAGMA foreign_key_check;
+table | rowid | parent | fkid
+review | 79 | member | 1
+sqlite> DELETE FROM review WHERE member_id = 999;
+sqlite> PRAGMA foreign_keys = ON;
+sqlite> INSERT INTO review (member_id, movie_id, rating, created_at) VALUES (999, 1, 5, '2024-10-01 12:00:00');
+Runtime error: FOREIGN KEY constraint failed (19)
+sqlite> DELETE FROM genre WHERE name = '액션';
+Runtime error: FOREIGN KEY constraint failed (19)
+sqlite> UPDATE review SET rating = 6 WHERE review_id = 1;
+Runtime error: CHECK constraint failed: rating BETWEEN 1 AND 5 (19)
+sqlite> INSERT INTO member (email, nickname, joined_at) VALUES ('new@example.com', '새회원', '2024-13-01');
+Runtime error: CHECK constraint failed: date(joined_at, '+0 days') IS joined_at (19)
+sqlite> INSERT INTO review (member_id, movie_id, rating, created_at) VALUES (1, 1, 4, '2024-10-01 12:00:00');
+Runtime error: UNIQUE constraint failed: review.member_id, review.movie_id (19)
+sqlite> INSERT INTO review (member_id, movie_id, created_at) VALUES (1, 22, '2024-10-01 12:00:00');
+Runtime error: NOT NULL constraint failed: review.rating (19)
+sqlite> PRAGMA foreign_key_check;
+sqlite> .quit
+movie-review-db$ exit
+exit
+```
+
+| 순서 | 상황 | 실제 메시지 | 읽는 법 |
+| --- | --- | --- | --- |
+| 1 | FK **꺼짐**(0)에서 없는 회원 999 의 리뷰 INSERT | (메시지 없음, 성공) | 검사를 안 하므로 고아 행이 들어간다. `foreign_key_check` 가 `review \| 79 \| member \| 1` 로 찾아낸다 |
+| 2 | FK **켬** 후 같은 INSERT | `Runtime error: FOREIGN KEY constraint failed (19)` | 19 = `SQLITE_CONSTRAINT`. FK 메시지는 어느 FK 인지 알려 주지 않아 `foreign_key_check` 나 스키마로 찾아야 한다 |
+| 3 | 영화 4편이 쓰는 '액션' DELETE | `FOREIGN KEY constraint failed (19)` | `ON DELETE RESTRICT` (B09) |
+| 4 | 별점 6 으로 UPDATE | `CHECK constraint failed: rating BETWEEN 1 AND 5 (19)` | CHECK 메시지에는 **실패한 식이 그대로** 나온다 |
+| 5 | 가입일 `2024-13-01` | `CHECK constraint failed: date(joined_at, '+0 days') IS joined_at (19)` | 날짜 CHECK 가 `IS` 로 NULL 까지 거부 (B10) |
+| 6 | 같은 회원·영화 두 번째 리뷰 | `UNIQUE constraint failed: review.member_id, review.movie_id (19)` | 위반한 컬럼 조합이 나온다 (B11) |
+| 7 | 별점 없이 리뷰 INSERT | `NOT NULL constraint failed: review.rating (19)` | 빠진 컬럼이 나온다 (B12) |
+
+Python `sqlite3` 모듈(`run_all.py`)에서는 같은 문장이 `sqlite3.IntegrityError` 로 올라오고 메시지 본문은 같습니다(결과 파일의 `Error (예상된 오류): …` 줄, 예: [`B07`](../results/B07.txt)).

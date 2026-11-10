@@ -1,4 +1,4 @@
-Q12 [집계] 월별 리뷰 수와 평균 별점 추이
+Q12 [집계 (추가)] 월별 리뷰 수와 평균 별점 추이
 source: sql/03_queries.sql
 
 -- [SQLite 전용] strftime('%Y-%m', …). MySQL: DATE_FORMAT(created_at, '%Y-%m'), PostgreSQL: to_char(created_at, 'YYYY-MM')

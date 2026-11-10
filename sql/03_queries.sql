@@ -1,13 +1,18 @@
 -- =============================================================================
--- 03_queries.sql — 핵심 쿼리 17개
+-- 03_queries.sql — 쿼리 17개 = 과제 필수 15개 + 추가 2개 (Q12, Q14) · 실행 순서 3/3
 --
---   분류            개수   쿼리
---   기본 조회        4     Q01 ~ Q04   (WHERE · ORDER BY · LIMIT · LIKE)
---   조인            4     Q05 ~ Q08   (INNER JOIN 2 · LEFT JOIN 2)
---   집계            4     Q09 ~ Q12   (COUNT · SUM · AVG · GROUP BY · HAVING)
---   서브쿼리         2     Q13 ~ Q14   (스칼라 서브쿼리 · 상관 서브쿼리 + CTE)
---   수정 / 삭제      2     Q15 ~ Q16   (UPDATE · DELETE + CASCADE)
---   인덱스          1     Q17         (CREATE INDEX + 실행 계획 비교)
+--   분류            필수  추가  쿼리
+--   기본 조회        4     -    Q01 ~ Q04         (WHERE · ORDER BY · LIMIT · LIKE)
+--   조인            4     -    Q05 ~ Q08         (INNER JOIN 2 · LEFT JOIN 2)
+--   집계            3     1    Q09 ~ Q11 + Q12   (COUNT · SUM · AVG · GROUP BY · HAVING)
+--   서브쿼리         1     1    Q13 + Q14         (스칼라 서브쿼리 / 상관 서브쿼리 + CTE)
+--   수정 / 삭제      2     -    Q15 ~ Q16         (UPDATE · DELETE + CASCADE)
+--   인덱스          1     -    Q17               (CREATE INDEX + 실행 계획 비교)
+--   합계            15    2
+--
+--   추가 2개를 둔 이유: Q12 는 시간 축(월별) 집계와 SQLite 전용 strftime 의 대응 문법 예시,
+--   Q14 는 "그룹별 최댓값을 가진 행 전체" 를 CTE + 상관 서브쿼리로 푸는 연습(회고 4-1)이다.
+--   두 쿼리는 마커의 분류에 "추가" 를 붙여 필수 15개와 구분한다 (test_required_fifteen_match_categories 가 검사).
 --
 --   02_seed.sql 직후의 데이터 기준이며, Q15·Q16 은 데이터를 바꾸므로 순서대로 실행한다.
 --   각 쿼리 위의 "-- @Qnn | 분류 | 설명" 줄은 scripts/run_all.py 가 결과 파일 이름과 제목으로 사용한다.
@@ -118,7 +123,7 @@ GROUP BY mb.member_id, mb.nickname
 ORDER BY review_count DESC, avg_given DESC;
 
 
--- @Q12 | 집계 | 월별 리뷰 수와 평균 별점 추이
+-- @Q12 | 집계 (추가) | 월별 리뷰 수와 평균 별점 추이
 -- [SQLite 전용] strftime('%Y-%m', …). MySQL: DATE_FORMAT(created_at, '%Y-%m'), PostgreSQL: to_char(created_at, 'YYYY-MM')
 SELECT strftime('%Y-%m', created_at) AS month,
        COUNT(*)                      AS review_count,
@@ -139,8 +144,9 @@ HAVING AVG(r.rating) > (SELECT AVG(rating) FROM review)
 ORDER BY avg_rating DESC, m.title;
 
 
--- @Q14 | 서브쿼리 (상관) | 장르마다 평균 별점이 가장 높은 영화 (동점이면 모두 표시)
+-- @Q14 | 서브쿼리 (상관·추가) | 장르마다 평균 별점이 가장 높은 영화 (동점이면 모두 표시)
 WITH movie_avg AS (                                   -- CTE: 영화별 평균을 이름 붙인 임시 결과로 만든다 (View 아님)
+    -- 1단계 기대 결과(리뷰가 있는 영화 20행 중 한 행): movie_id 1 | genre_id 2 | 기생충 | 4.714… | 7
     SELECT m.movie_id, m.genre_id, m.title,
            AVG(r.rating) AS avg_rating,
            COUNT(*)      AS review_count
@@ -153,10 +159,12 @@ SELECT g.name AS genre,
        ROUND(ma.avg_rating, 2) AS avg_rating,
        ma.review_count
 FROM movie_avg AS ma
-INNER JOIN genre AS g ON g.genre_id = ma.genre_id
+INNER JOIN genre AS g ON g.genre_id = ma.genre_id    -- 3단계 기대 결과: 기생충 행에 genre_id 2 → '드라마' 가 붙는다
 WHERE ma.avg_rating = (SELECT MAX(x.avg_rating)        -- 상관 서브쿼리: 바깥 행의 genre_id 마다 다시 계산된다
                        FROM movie_avg AS x
                        WHERE x.genre_id = ma.genre_id)
+-- 2단계 기대 결과: 바깥 행이 기생충(genre_id 2)이면 MAX = 4.75(서울의 봄) → 4.714… ≠ 4.75 라 기생충은 빠진다
+-- 4단계 기대 결과(정렬 후 11행 중 첫 행, 동점 2쌍 포함): 드라마 | 서울의 봄 | 4.75 | 4
 ORDER BY ma.avg_rating DESC, g.name;
 
 

@@ -140,6 +140,15 @@ class QueryFileTest(unittest.TestCase):
         self.assertIn("DELETE FROM", all_sql)
         self.assertIn("CREATE INDEX", all_sql)
 
+    def test_required_fifteen_match_categories(self):
+        """과제 필수 15개(분류에 '추가' 가 없는 쿼리)는 범주별 개수가 요구와 정확히 같고, 추가분은 Q12 · Q14 뿐이다."""
+        required = [b for b in self.blocks if "추가" not in b.category]
+        extra = [b.qid for b in self.blocks if "추가" in b.category]
+        self.assertEqual(len(required), 15)
+        self.assertEqual(extra, ["Q12", "Q14"])
+        cats = Counter(b.category.split()[0] for b in required)
+        self.assertEqual(dict(cats), {"기본": 4, "조인": 4, "집계": 3, "서브쿼리": 1, "수정": 1, "삭제": 1, "인덱스": 1})
+
     def test_all_sql_files_execute_and_results_are_current(self):
         self.assertEqual(run_all.main(["--check"]), 0)
 
