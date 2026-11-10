@@ -1,9 +1,10 @@
 Q06 [조인 (INNER)] 장르 이름과 함께 영화 목록 보기 (장르 → 개봉일 순)
 source: sql/03_queries.sql
+screenshot: results/screenshots/Q06.png (sqlite3 CLI 실행 화면)
 
 sqlite> SELECT g.name AS genre, m.title, m.release_date, m.director
    ...> FROM movie AS m
-   ...> INNER JOIN genre AS g ON g.genre_id = m.genre_id
+   ...> INNER JOIN genre AS g ON g.genre_id = m.genre_id   -- 짝이 있는 행만: 영화가 없는 장르 '뮤지컬' 은 빠져 10개 중 9개 장르만 나온다
    ...> ORDER BY g.genre_id, m.release_date;
 genre      | title                    | release_date | director
 -----------+--------------------------+--------------+----------------

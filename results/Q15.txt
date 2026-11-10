@@ -1,5 +1,6 @@
 Q15 [수정 (UPDATE)] 2024-06-01 이후 리뷰가 없는 ACTIVE 회원을 휴면(DORMANT)으로 전환
 source: sql/03_queries.sql
+screenshot: results/screenshots/Q15.png (sqlite3 CLI 실행 화면)
 
 -- 변경 전: 대상 회원 확인
 sqlite> SELECT mb.member_id, mb.nickname, mb.status,

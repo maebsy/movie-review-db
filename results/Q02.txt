@@ -1,5 +1,6 @@
 Q02 [기본 조회] 별점 5점 리뷰 중 가장 최근 5개
 source: sql/03_queries.sql
+screenshot: results/screenshots/Q02.png (sqlite3 CLI 실행 화면)
 
 sqlite> SELECT review_id, movie_id, member_id, content, created_at
    ...> FROM review

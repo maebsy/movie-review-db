@@ -1,5 +1,6 @@
 Q13 [서브쿼리] 전체 리뷰 평균 별점보다 평균이 높은 영화
 source: sql/03_queries.sql
+screenshot: results/screenshots/Q13.png (sqlite3 CLI 실행 화면)
 
 sqlite> SELECT m.title,
    ...>        ROUND(AVG(r.rating), 2) AS avg_rating,

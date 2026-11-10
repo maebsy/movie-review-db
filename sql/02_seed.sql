@@ -79,6 +79,12 @@ INSERT INTO movie (movie_id, genre_id, title, release_date, running_time, countr
 
 -- ----------------------------------------------------------------------------- review (78)
 --     (review_id, member_id, movie_id, rating, content, created_at)
+--   샘플 데이터의 의도
+--     · content = NULL 4건 (review 21 · 31 · 44 · 48): 글 없이 별점만 남긴 리뷰. 실제 서비스에서 흔한 경우를 넣어
+--       ① 별점은 필수(NOT NULL)·내용은 선택이라는 스키마 규칙을 데이터로 보여 주고
+--       ② Q05 가 COALESCE 로 '(별점만 남김)' 을 표시하는지, COUNT(*) 78 과 COUNT(content) 74 가 다른지 확인한다
+--     · created_at 은 2024-01 ~ 2024-09 에 흩어 놓아 월별 추이(Q12)와 "6월 이후 리뷰 없음"(Q15) 조건이 의미 있게 함
+--     · 별점은 실제 평점 서비스처럼 4·5 가 많고(65건) 1~3 도 섞어(13건) 영화마다 평균이 달라지게 해 TOP 5(Q09)·장르별 1위(Q14)에 순위와 동점이 생기게 함
 INSERT INTO review (review_id, member_id, movie_id, rating, content, created_at) VALUES
     ( 1,  1,  2, 5, '극장에서 다시 보고 싶다', '2024-01-06 10:39:15'),  -- 팝콘요정 · 인터스텔라
     ( 2, 10, 19, 4, '좀비물인데 사람이 더 무섭다', '2024-01-06 20:19:29'),  -- 공포체험 · 부산행

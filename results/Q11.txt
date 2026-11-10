@@ -1,5 +1,6 @@
 Q11 [집계] 회원별 리뷰 수 · 평균 준 별점 · 총 관람 시간(분) — 활동량 순
 source: sql/03_queries.sql
+screenshot: results/screenshots/Q11.png (sqlite3 CLI 실행 화면)
 
 sqlite> SELECT mb.nickname,
    ...>        COUNT(*)                  AS review_count,

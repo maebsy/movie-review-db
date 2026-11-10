@@ -24,6 +24,7 @@ from typing import List, Optional, Sequence, Tuple
 ROOT = Path(__file__).resolve().parents[1]
 SQL_DIR = ROOT / "sql"
 RESULTS_DIR = ROOT / "results"
+SCREENSHOT_DIR = RESULTS_DIR / "screenshots"   # sqlite3 CLI 실행 화면 (있으면 결과 파일에 경로를 남긴다)
 DB_PATH = ROOT / "movie_review.db"
 
 BUILD_FILES = ("01_schema.sql", "02_seed.sql")
@@ -184,8 +185,17 @@ def execute(con: sqlite3.Connection, stmt: Statement, source: str) -> Outcome:
     return Outcome(stmt, affected=cur.rowcount if cur.rowcount >= 0 else None)
 
 
+def screenshot(block: Block) -> Optional[str]:
+    """results/screenshots/<ID>.png 가 있으면 results/ 기준 상대 경로를 돌려준다 (--check 의 임시 폴더와 무관하게 같은 값)."""
+    name = "{}.png".format(block.qid)
+    return "screenshots/" + name if (SCREENSHOT_DIR / name).exists() else None
+
+
 def render_text(block: Block, outcomes: List[Outcome]) -> str:
-    out = ["{} [{}] {}".format(block.qid, block.category, block.title), "source: sql/{}".format(block.source), ""]
+    out = ["{} [{}] {}".format(block.qid, block.category, block.title), "source: sql/{}".format(block.source)]
+    if screenshot(block):
+        out.append("screenshot: results/{} (sqlite3 CLI 실행 화면)".format(screenshot(block)))
+    out.append("")
     for o in outcomes:
         for line in o.statement.caption:
             out.append("-- " + line)
@@ -206,6 +216,9 @@ def render_text(block: Block, outcomes: List[Outcome]) -> str:
 def render_markdown(block: Block, outcomes: List[Outcome]) -> List[str]:
     out = ["### {} · {}".format(block.qid, block.title), "", "`{}` · 원본: [`sql/{}`](../sql/{})".format(
         block.category, block.source, block.source), ""]
+    if screenshot(block):
+        out += ["실행 화면 (sqlite3 CLI): [`{0}`]({0})".format(screenshot(block)), "",
+                "![{} 실행 화면]({})".format(block.qid, screenshot(block)), ""]
     for o in outcomes:
         if o.statement.caption:
             out.append("_" + " ".join(o.statement.caption) + "_")
@@ -257,11 +270,11 @@ def generate(out_dir: Path, db_path: Path) -> List[str]:
 
     md = ["# 실행 결과", "",
           "`python scripts/run_all.py` 가 빈 DB 에 `01_schema.sql` → `02_seed.sql` 을 실행한 뒤, 아래 쿼리를 **순서대로** 실행한 실제 결과입니다.",
-          "쿼리별 텍스트 결과(sqlite3 CLI 형식)는 같은 폴더의 `Qnn.txt` · `Bnn.txt` 파일에 있습니다.", "",
+          "쿼리별 텍스트 결과(sqlite3 CLI 형식)는 같은 폴더의 `Qnn.txt` · `Bnn.txt` 파일에, Q01~Q17 의 sqlite3 CLI 실행 화면은 [`screenshots/`](screenshots/README.md) 에 있습니다.", "",
           "- SQLite {}".format(sqlite3.sqlite_version),
           "- 테이블 행 수: " + ", ".join("{} {}".format(t, n) for t, n in counts) + " (모두 10행 이상)",
           "- `PRAGMA foreign_key_check` 위반 0건", ""]
-    index = ["| ID | 분류 | 내용 | 결과 파일 |", "| --- | --- | --- | --- |"]
+    index = ["| ID | 분류 | 내용 | 결과 파일 | 실행 화면 |", "| --- | --- | --- | --- | --- |"]
     sections: List[str] = []
     written = ["00_table_counts.txt"]
     try:
@@ -276,8 +289,10 @@ def generate(out_dir: Path, db_path: Path) -> List[str]:
                 filename = "{}.txt".format(block.slug)
                 (out_dir / filename).write_text(render_text(block, outcomes), encoding="utf-8")
                 written.append(filename)
-                index.append("| [{0}](#{1}) | {2} | {3} | [{4}]({4}) |".format(
-                    block.qid, anchor(block), block.category, md_escape(block.title), filename))
+                shot = screenshot(block)
+                index.append("| [{0}](#{1}) | {2} | {3} | [{4}]({4}) | {5} |".format(
+                    block.qid, anchor(block), block.category, md_escape(block.title), filename,
+                    "[{0}]({1})".format(shot.split("/")[-1], shot) if shot else "-"))
                 sections += render_markdown(block, outcomes)
     finally:
         con.close()  # 실패해도 DB 파일을 닫아야 Windows 에서 임시 폴더를 지울 수 있다

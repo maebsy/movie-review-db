@@ -71,7 +71,7 @@ SQLite 는 FK 검사가 기본으로 꺼져 있어서 모든 SQL 파일 첫 줄�
 ### 1-5. 각 쿼리의 실행 결과가 스크린샷 또는 텍스트로 첨부되어 있는가 ✅
 
 - 📄 [`results/`](../results) — 쿼리별 텍스트 결과(`Q01.txt` ~ `Q17.txt`, 보너스 `B01~B14`, `R01~R03`) + 전체를 표로 모은 [`results/README.md`](../results/README.md)
-- 📄 [`results/screenshots/`](../results/screenshots/README.md) — 주요 쿼리를 실행한 sqlite3 CLI 터미널 화면 PNG
+- 📄 [`results/screenshots/`](../results/screenshots/README.md) — Q01~Q17 전부를 실행한 sqlite3 CLI 터미널 화면 PNG (각 결과 파일 머리의 `screenshot:` 줄과 `results/README.md` 쿼리별 절에서 연결)
 - ▶️ `python scripts/run_all.py --check` — SQL 을 다시 실행해 결과 파일과 일치하는지 검사 (GitHub Actions 에서 push 마다 실행)
 
 결과 파일은 손으로 붙여넣지 않고 스크립트가 실제 실행 결과를 sqlite3 CLI 형식으로 기록합니다. 그래서 SQL 을 고치고 결과를 갱신하지 않으면 CI 가 실패합니다.
@@ -148,12 +148,14 @@ MySQL/PostgreSQL 이라면 날짜는 `DATE`/`DATETIME`, 문자열은 `VARCHAR(n)
 
 | | 엑셀 | 관계형 DB |
 | --- | --- | --- |
-| 데이터 사이 관계 | 표현할 방법이 없어 정보를 반복해서 적음 | PK/FK 로 연결하고 정보는 한 번만 저장 |
+| 데이터 사이 관계 | VLOOKUP 등으로 참조할 수 있지만 관계를 강제하지 못함 | PK/FK 로 연결하고 정보는 한 번만 저장 |
 | 규칙 강제 | 별점 칸에 "다섯" 이라고 써도 들어감 | `CHECK (rating BETWEEN 1 AND 5)`, `NOT NULL`, `UNIQUE` 로 잘못된 값을 거부 (B10~B12) |
 | 무결성 | 영화 행을 지워도 그 영화의 리뷰가 남음 | FK 가 고아 행을 막고(B07), 삭제 정책(RESTRICT/CASCADE)을 정할 수 있음 |
 | 질의 | 필터·피벗을 손으로 조작 | SQL 한 문장으로 조인·집계·랭킹 (Q09, Q14) |
 | 동시 사용·트랜잭션 | 파일 하나를 한 사람이 편집 | 트랜잭션으로 "전부 성공 아니면 전부 취소" (seed 의 BEGIN/COMMIT, B14) |
 | 대량 데이터 | 행이 많아지면 느려지고 찾기 어려움 | 인덱스로 필요한 행만 바로 찾음 (Q17) |
+
+관계 표현에서 엑셀은 VLOOKUP 같은 참조를 써도 원본 행 삭제를 막지 못하고 `#N/A` 가 될 수 있습니다. DB 는 FK 검사를 켜면 없는 회원 999 의 리뷰 INSERT 를 `Runtime error: FOREIGN KEY constraint failed (19)` 로 거부합니다. 무결성도 DB 규칙으로 강제하여 별점 6 은 `Runtime error: CHECK constraint failed: rating BETWEEN 1 AND 5 (19)`, 같은 회원·영화의 중복 리뷰는 `Runtime error: UNIQUE constraint failed: review.member_id, review.movie_id (19)` 로 거부합니다([실제로 겪은 오류 메시지](bonus.md#실제로-겪은-오류-메시지-sqlite3-cli-원문)).
 
 **차이의 핵심은 데이터의 양이 아니라 "관계와 규칙을 표현할 수 있는가"** 입니다. 테이블을 나누는 이유는 중복을 없애서 수정·삽입·삭제 이상을 막기 위해서입니다(2-1 참고).
 
@@ -284,3 +286,16 @@ Q09 를 기생충으로 따라가 보면:
 | LEFT JOIN 했는데 리뷰 없는 영화가 1건으로 나옴 | `COUNT(*)` → `COUNT(r.review_id)` (Q08) |
 | 장르별 영화 수가 리뷰 수만큼 부풀려짐 | 리뷰 조인으로 영화 행이 복제됨 → `COUNT(DISTINCT m.movie_id)` (Q10) |
 | UPDATE/DELETE 결과 때문에 뒤 쿼리 결과가 바뀜 | 수정 쿼리를 파일 끝(Q15, Q16)에 두고, 보너스 파일은 새 DB 에서 실행 |
+
+#### 시도한 방법과 최종 선택
+
+| 시도 | 방법 | 결과 | 버린 이유/선택 이유 |
+| --- | --- | --- | --- |
+| ① 최초 검사 | `CHECK (date(x) = x)` | 해석 불가 날짜는 비교 결과가 NULL 이 되어 통과했습니다 | CHECK 가 NULL 을 거부하지 않아 교체했습니다 |
+| ② NULL 처리 | `= → IS` | 해석 불가 날짜는 막았지만 Windows · Python 3.10 CI 에서 존재하지 않는 날짜가 통과했습니다 | 일부 SQLite 버전의 수식어 없는 `date()` 가 입력을 그대로 반환했습니다 |
+| ③ 최종 선택 | `date(x, '+0 days') IS x` | 날짜 계산을 강제하여 넘친 날짜와 해석 불가 날짜를 거부했습니다 | NULL 비교와 버전별 날짜 처리 차이를 함께 해결했습니다 |
+| 대안 검토만 함 | 트리거로 검증하기 | 미구현 | 미션이 트리거 사용을 금지하여 제외했습니다 |
+| 대안 검토만 함 | 앱에서 검증하기 | 미구현 | DB 규칙이 아니게 되어 직접 SQL 입력을 막지 못합니다 |
+| 대안 검토만 함 | `strftime` 으로 비교하기 | 미구현·미검증 | 형식 비교만으로 실제 날짜 계산이 보장되는지 별도 검증이 필요해, 날짜 계산을 명시하는 최종안을 선택했습니다 |
+
+**작업 시간은 기록하지 않음**. `git log` 의 커밋 시각만 남깁니다: 1차 `cf86c1e` 는 2026-10-12 14:41 KST, 2차 `d5a1e43` 는 2026-10-12 23:27 KST 입니다. 2차 문제는 CI 의 Windows · Python 3.10 에서 발견했으며, 두 커밋의 시각 차이를 작업 시간으로 계산하지 않았습니다.

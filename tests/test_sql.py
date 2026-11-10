@@ -149,6 +149,14 @@ class QueryFileTest(unittest.TestCase):
         cats = Counter(b.category.split()[0] for b in required)
         self.assertEqual(dict(cats), {"기본": 4, "조인": 4, "집계": 3, "서브쿼리": 1, "수정": 1, "삭제": 1, "인덱스": 1})
 
+    def test_every_query_has_screenshot(self):
+        """Q01~Q17 모두 sqlite3 CLI 실행 화면(results/screenshots/Qnn.png)이 있고 결과 파일에서 연결된다."""
+        for block in self.blocks:
+            with self.subTest(q=block.qid):
+                self.assertTrue((run_all.SCREENSHOT_DIR / "{}.png".format(block.qid)).is_file())
+                head = (run_all.RESULTS_DIR / "{}.txt".format(block.qid)).read_text(encoding="utf-8").splitlines()[:3]
+                self.assertIn("screenshot: results/screenshots/{}.png (sqlite3 CLI 실행 화면)".format(block.qid), head)
+
     def test_all_sql_files_execute_and_results_are_current(self):
         self.assertEqual(run_all.main(["--check"]), 0)
 

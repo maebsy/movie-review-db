@@ -1,5 +1,6 @@
 Q09 [집계 (랭킹)] 평균 별점 TOP 5 영화 (리뷰 3개 이상만, 동점이면 리뷰 많은 순)
 source: sql/03_queries.sql
+screenshot: results/screenshots/Q09.png (sqlite3 CLI 실행 화면)
 
 sqlite> SELECT m.title,
    ...>        ROUND(AVG(r.rating), 2) AS avg_rating,

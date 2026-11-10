@@ -1,26 +1,38 @@
 Q17 [인덱스] review.movie_id 인덱스 생성 전/후 실행 계획 비교
 source: sql/03_queries.sql
+screenshot: results/screenshots/Q17.png (sqlite3 CLI 실행 화면)
 
 -- 적용 이유: review.movie_id 는 영화별 리뷰 조회·JOIN·GROUP BY(Q08~Q14)에 가장 자주 쓰이는 컬럼인데,
 -- SQLite 는 FK 컬럼에 인덱스를 자동으로 만들지 않고, UNIQUE(member_id, movie_id) 인덱스는
 -- member_id 가 앞이라 movie_id 만으로는 사용할 수 없다.
 -- [SQLite 전용] EXPLAIN QUERY PLAN. MySQL/PostgreSQL: EXPLAIN
--- 생성 전: 리뷰 테이블 전체를 훑는다 (SCAN)
+-- 생성 전: 리뷰 테이블 전체를 훑는다 (SCAN) — 78행을 모두 읽은 뒤 movie_id = 1 인 7행만 남긴다
 sqlite> EXPLAIN QUERY PLAN
    ...> SELECT rating, content FROM review WHERE movie_id = 1;
 QUERY PLAN
 `--SCAN review
 
+-- 생성 전 JOIN: 리뷰를 전부 훑고(SCAN r) 영화는 PK 로 찾은 뒤, 영화별로 묶으려고 임시 B-tree 로 다시 정렬한다
+sqlite> EXPLAIN QUERY PLAN
+   ...> SELECT m.title, AVG(r.rating)
+   ...> FROM movie AS m
+   ...> INNER JOIN review AS r ON r.movie_id = m.movie_id
+   ...> GROUP BY m.movie_id;
+QUERY PLAN
+|--SCAN r
+|--SEARCH m USING INTEGER PRIMARY KEY (rowid=?)
+`--USE TEMP B-TREE FOR GROUP BY
+
 sqlite> CREATE INDEX idx_review_movie_id ON review (movie_id);
 OK
 
--- 생성 후: 인덱스로 movie_id = 1 인 행만 찾아간다 (SEARCH … USING INDEX)
+-- 생성 후: 인덱스로 movie_id = 1 인 행만 찾아간다 (SEARCH … USING INDEX) — B-tree 에서 1 의 위치로 바로 가서 7행만 읽는다
 sqlite> EXPLAIN QUERY PLAN
    ...> SELECT rating, content FROM review WHERE movie_id = 1;
 QUERY PLAN
 `--SEARCH review USING INDEX idx_review_movie_id (movie_id=?)
 
--- 같은 인덱스가 영화별 집계(Q09)의 JOIN 에도 쓰이는지 확인
+-- 생성 후 JOIN: 영화를 PK 순서로 훑으며(SCAN m) 리뷰를 인덱스로 찾는다(SEARCH r USING INDEX) → 이미 영화 순서라 임시 B-tree 정렬이 사라진다
 sqlite> EXPLAIN QUERY PLAN
    ...> SELECT m.title, AVG(r.rating)
    ...> FROM movie AS m

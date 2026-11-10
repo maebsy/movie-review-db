@@ -1,5 +1,6 @@
 Q05 [조인 (INNER)] 최근 리뷰 10개를 회원 닉네임·영화 제목과 함께 보기 (3개 테이블 조인)
 source: sql/03_queries.sql
+screenshot: results/screenshots/Q05.png (sqlite3 CLI 실행 화면)
 
 sqlite> SELECT r.created_at,
    ...>        mb.nickname,
@@ -7,6 +8,8 @@ sqlite> SELECT r.created_at,
    ...>        r.rating,
    ...>        COALESCE(r.content, '(별점만 남김)') AS content
    ...> FROM review AS r
+   ...> -- INNER JOIN 은 ON 조건에 짝이 있는 행만 남긴다: 리뷰가 없는 회원 3명(12~14)과 영화 2편(18, 22)은 짝이 없어
+   ...> -- 이 조인 결과(78행)에서 빠진다. 짝이 없는 쪽을 NULL 로 채워 남기는 LEFT JOIN(Q07 · Q08)과 반대.
    ...> INNER JOIN member AS mb ON mb.member_id = r.member_id     -- review.member_id (FK) → member.member_id (PK)
    ...> INNER JOIN movie  AS mv ON mv.movie_id  = r.movie_id      -- review.movie_id  (FK) → movie.movie_id  (PK)
    ...> ORDER BY r.created_at DESC

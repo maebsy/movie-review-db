@@ -1,5 +1,6 @@
 Q03 [기본 조회] 러닝타임 150분 이상인 긴 영화 (긴 순서, 같으면 제목순)
 source: sql/03_queries.sql
+screenshot: results/screenshots/Q03.png (sqlite3 CLI 실행 화면)
 
 sqlite> SELECT title, running_time, director
    ...> FROM movie

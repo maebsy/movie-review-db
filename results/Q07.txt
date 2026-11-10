@@ -1,5 +1,6 @@
 Q07 [조인 (LEFT)] 리뷰를 한 번도 작성하지 않은 회원 찾기
 source: sql/03_queries.sql
+screenshot: results/screenshots/Q07.png (sqlite3 CLI 실행 화면)
 
 sqlite> SELECT mb.member_id, mb.nickname, mb.joined_at, mb.status
    ...> FROM member AS mb

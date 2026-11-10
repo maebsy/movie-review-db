@@ -14,6 +14,12 @@
 --   Q14 는 "그룹별 최댓값을 가진 행 전체" 를 CTE + 상관 서브쿼리로 푸는 연습(회고 4-1)이다.
 --   두 쿼리는 마커의 분류에 "추가" 를 붙여 필수 15개와 구분한다 (test_required_fifteen_match_categories 가 검사).
 --
+--   쿼리별 요구 유형: Q01~Q04 조회 · Q05 Q06 조인(INNER) · Q07 Q08 조인(LEFT) · Q09~Q11 집계 · Q12 집계(추가)
+--                    · Q13 서브쿼리 · Q14 서브쿼리(추가) · Q15 수정 · Q16 삭제 · Q17 인덱스
+--   실행 순서와 의존성: Q01~Q14 는 읽기 전용이라 순서와 무관 → Q15 UPDATE(회원 상태 변경) → Q16 DELETE(회원 1명 ·
+--                    리뷰 2건 삭제, 이후 리뷰 76행) → Q17 인덱스 생성(결과 행은 그대로, 실행 계획만 바뀜).
+--                    Q15·Q16 이 데이터를 바꾸므로 처음부터 다시 실행하려면 01_schema → 02_seed 부터.
+--
 --   02_seed.sql 직후의 데이터 기준이며, Q15·Q16 은 데이터를 바꾸므로 순서대로 실행한다.
 --   각 쿼리 위의 "-- @Qnn | 분류 | 설명" 줄은 scripts/run_all.py 가 결과 파일 이름과 제목으로 사용한다.
 -- =============================================================================
@@ -57,6 +63,8 @@ SELECT r.created_at,
        r.rating,
        COALESCE(r.content, '(별점만 남김)') AS content
 FROM review AS r
+-- INNER JOIN 은 ON 조건에 짝이 있는 행만 남긴다: 리뷰가 없는 회원 3명(12~14)과 영화 2편(18, 22)은 짝이 없어
+-- 이 조인 결과(78행)에서 빠진다. 짝이 없는 쪽을 NULL 로 채워 남기는 LEFT JOIN(Q07 · Q08)과 반대.
 INNER JOIN member AS mb ON mb.member_id = r.member_id     -- review.member_id (FK) → member.member_id (PK)
 INNER JOIN movie  AS mv ON mv.movie_id  = r.movie_id      -- review.movie_id  (FK) → movie.movie_id  (PK)
 ORDER BY r.created_at DESC
@@ -66,7 +74,7 @@ LIMIT 10;
 -- @Q06 | 조인 (INNER) | 장르 이름과 함께 영화 목록 보기 (장르 → 개봉일 순)
 SELECT g.name AS genre, m.title, m.release_date, m.director
 FROM movie AS m
-INNER JOIN genre AS g ON g.genre_id = m.genre_id
+INNER JOIN genre AS g ON g.genre_id = m.genre_id   -- 짝이 있는 행만: 영화가 없는 장르 '뮤지컬' 은 빠져 10개 중 9개 장르만 나온다
 ORDER BY g.genre_id, m.release_date;
 
 
@@ -104,6 +112,8 @@ SELECT g.name                              AS genre,
        COUNT(DISTINCT m.movie_id)          AS movie_count,   -- 리뷰 조인으로 영화 행이 복제되므로 DISTINCT
        COUNT(r.review_id)                  AS review_count,
        ROUND(AVG(r.rating), 2)             AS avg_rating     -- 리뷰가 없으면 AVG 는 NULL
+-- NULL 처리: COUNT(r.review_id) · AVG(r.rating) 는 NULL 을 건너뛰므로 리뷰 없는 '뮤지컬' 은 0 · NULL 이 된다.
+--            COUNT(*) 는 행 자체를 세서 1 이 됐을 것이다. 같은 원리로 전체 리뷰는 COUNT(*) 78, COUNT(content) 74 (내용 NULL 4건 제외)
 FROM genre AS g
 LEFT JOIN movie  AS m ON m.genre_id = g.genre_id
 LEFT JOIN review AS r ON r.movie_id = m.movie_id
@@ -145,6 +155,21 @@ ORDER BY avg_rating DESC, m.title;
 
 
 -- @Q14 | 서브쿼리 (상관·추가) | 장르마다 평균 별점이 가장 높은 영화 (동점이면 모두 표시)
+-- 중간 결과 확인: 드라마(genre_id 2)의 1단계 행(movie_avg)과 2단계 상관 서브쿼리 값(genre_max), 남는지 여부(kept)
+WITH movie_avg AS (
+    SELECT m.movie_id, m.genre_id, m.title, AVG(r.rating) AS avg_rating, COUNT(*) AS review_count
+    FROM movie AS m
+    INNER JOIN review AS r ON r.movie_id = m.movie_id
+    GROUP BY m.movie_id, m.genre_id, m.title
+)
+SELECT ma.movie_id, ma.title, ROUND(ma.avg_rating, 3) AS avg_rating, ma.review_count,
+       ROUND((SELECT MAX(x.avg_rating) FROM movie_avg AS x WHERE x.genre_id = ma.genre_id), 3) AS genre_max,
+       ma.avg_rating = (SELECT MAX(x.avg_rating) FROM movie_avg AS x WHERE x.genre_id = ma.genre_id) AS kept
+FROM movie_avg AS ma
+WHERE ma.genre_id = 2
+ORDER BY ma.avg_rating DESC;
+
+-- 최종: 모든 장르에 같은 규칙 적용
 WITH movie_avg AS (                                   -- CTE: 영화별 평균을 이름 붙인 임시 결과로 만든다 (View 아님)
     -- 1단계 기대 결과(리뷰가 있는 영화 20행 중 한 행): movie_id 1 | genre_id 2 | 기생충 | 4.714… | 7
     SELECT m.movie_id, m.genre_id, m.title,
@@ -214,17 +239,24 @@ SELECT (SELECT COUNT(*) FROM member) AS member_count,
 --           SQLite 는 FK 컬럼에 인덱스를 자동으로 만들지 않고, UNIQUE(member_id, movie_id) 인덱스는
 --           member_id 가 앞이라 movie_id 만으로는 사용할 수 없다.
 -- [SQLite 전용] EXPLAIN QUERY PLAN. MySQL/PostgreSQL: EXPLAIN
--- 생성 전: 리뷰 테이블 전체를 훑는다 (SCAN)
+-- 생성 전: 리뷰 테이블 전체를 훑는다 (SCAN) — 78행을 모두 읽은 뒤 movie_id = 1 인 7행만 남긴다
 EXPLAIN QUERY PLAN
 SELECT rating, content FROM review WHERE movie_id = 1;
+
+-- 생성 전 JOIN: 리뷰를 전부 훑고(SCAN r) 영화는 PK 로 찾은 뒤, 영화별로 묶으려고 임시 B-tree 로 다시 정렬한다
+EXPLAIN QUERY PLAN
+SELECT m.title, AVG(r.rating)
+FROM movie AS m
+INNER JOIN review AS r ON r.movie_id = m.movie_id
+GROUP BY m.movie_id;
 
 CREATE INDEX idx_review_movie_id ON review (movie_id);
 
--- 생성 후: 인덱스로 movie_id = 1 인 행만 찾아간다 (SEARCH … USING INDEX)
+-- 생성 후: 인덱스로 movie_id = 1 인 행만 찾아간다 (SEARCH … USING INDEX) — B-tree 에서 1 의 위치로 바로 가서 7행만 읽는다
 EXPLAIN QUERY PLAN
 SELECT rating, content FROM review WHERE movie_id = 1;
 
--- 같은 인덱스가 영화별 집계(Q09)의 JOIN 에도 쓰이는지 확인
+-- 생성 후 JOIN: 영화를 PK 순서로 훑으며(SCAN m) 리뷰를 인덱스로 찾는다(SEARCH r USING INDEX) → 이미 영화 순서라 임시 B-tree 정렬이 사라진다
 EXPLAIN QUERY PLAN
 SELECT m.title, AVG(r.rating)
 FROM movie AS m

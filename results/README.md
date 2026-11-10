@@ -1,7 +1,7 @@
 # 실행 결과
 
 `python scripts/run_all.py` 가 빈 DB 에 `01_schema.sql` → `02_seed.sql` 을 실행한 뒤, 아래 쿼리를 **순서대로** 실행한 실제 결과입니다.
-쿼리별 텍스트 결과(sqlite3 CLI 형식)는 같은 폴더의 `Qnn.txt` · `Bnn.txt` 파일에 있습니다.
+쿼리별 텍스트 결과(sqlite3 CLI 형식)는 같은 폴더의 `Qnn.txt` · `Bnn.txt` 파일에, Q01~Q17 의 sqlite3 CLI 실행 화면은 [`screenshots/`](screenshots/README.md) 에 있습니다.
 
 - SQLite 3.46.1
 - 테이블 행 수: genre 10, member 15, movie 22, review 78 (모두 10행 이상)
@@ -9,48 +9,52 @@
 
 ## 목차
 
-| ID | 분류 | 내용 | 결과 파일 |
-| --- | --- | --- | --- |
-| [Q01](#q01--2020년-이후-개봉한-영화를-최신-개봉순으로-보기) | 기본 조회 | 2020년 이후 개봉한 영화를 최신 개봉순으로 보기 | [Q01.txt](Q01.txt) |
-| [Q02](#q02--별점-5점-리뷰-중-가장-최근-5개) | 기본 조회 | 별점 5점 리뷰 중 가장 최근 5개 | [Q02.txt](Q02.txt) |
-| [Q03](#q03--러닝타임-150분-이상인-긴-영화-긴-순서-같으면-제목순) | 기본 조회 | 러닝타임 150분 이상인 긴 영화 (긴 순서, 같으면 제목순) | [Q03.txt](Q03.txt) |
-| [Q04](#q04--제목-검색-의-가-들어간-영화-like-부분-일치) | 기본 조회 | 제목 검색: '의' 가 들어간 영화 (LIKE 부분 일치) | [Q04.txt](Q04.txt) |
-| [Q05](#q05--최근-리뷰-10개를-회원-닉네임영화-제목과-함께-보기-3개-테이블-조인) | 조인 (INNER) | 최근 리뷰 10개를 회원 닉네임·영화 제목과 함께 보기 (3개 테이블 조인) | [Q05.txt](Q05.txt) |
-| [Q06](#q06--장르-이름과-함께-영화-목록-보기-장르--개봉일-순) | 조인 (INNER) | 장르 이름과 함께 영화 목록 보기 (장르 → 개봉일 순) | [Q06.txt](Q06.txt) |
-| [Q07](#q07--리뷰를-한-번도-작성하지-않은-회원-찾기) | 조인 (LEFT) | 리뷰를 한 번도 작성하지 않은 회원 찾기 | [Q07.txt](Q07.txt) |
-| [Q08](#q08--영화별-리뷰-수--리뷰가-없는-영화도-0으로-표시) | 조인 (LEFT) | 영화별 리뷰 수 — 리뷰가 없는 영화도 0으로 표시 | [Q08.txt](Q08.txt) |
-| [Q09](#q09--평균-별점-top-5-영화-리뷰-3개-이상만-동점이면-리뷰-많은-순) | 집계 (랭킹) | 평균 별점 TOP 5 영화 (리뷰 3개 이상만, 동점이면 리뷰 많은 순) | [Q09.txt](Q09.txt) |
-| [Q10](#q10--장르별-영화-수--리뷰-수--평균-별점-영화가-없는-장르도-포함) | 집계 | 장르별 영화 수 · 리뷰 수 · 평균 별점 (영화가 없는 장르도 포함) | [Q10.txt](Q10.txt) |
-| [Q11](#q11--회원별-리뷰-수--평균-준-별점--총-관람-시간분--활동량-순) | 집계 | 회원별 리뷰 수 · 평균 준 별점 · 총 관람 시간(분) — 활동량 순 | [Q11.txt](Q11.txt) |
-| [Q12](#q12--월별-리뷰-수와-평균-별점-추이) | 집계 (추가) | 월별 리뷰 수와 평균 별점 추이 | [Q12.txt](Q12.txt) |
-| [Q13](#q13--전체-리뷰-평균-별점보다-평균이-높은-영화) | 서브쿼리 | 전체 리뷰 평균 별점보다 평균이 높은 영화 | [Q13.txt](Q13.txt) |
-| [Q14](#q14--장르마다-평균-별점이-가장-높은-영화-동점이면-모두-표시) | 서브쿼리 (상관·추가) | 장르마다 평균 별점이 가장 높은 영화 (동점이면 모두 표시) | [Q14.txt](Q14.txt) |
-| [Q15](#q15--2024-06-01-이후-리뷰가-없는-active-회원을-휴면dormant으로-전환) | 수정 (UPDATE) | 2024-06-01 이후 리뷰가 없는 ACTIVE 회원을 휴면(DORMANT)으로 전환 | [Q15.txt](Q15.txt) |
-| [Q16](#q16--탈퇴withdrawn-회원-삭제--그-회원의-리뷰는-on-delete-cascade-로-함께-삭제) | 삭제 (DELETE) | 탈퇴(WITHDRAWN) 회원 삭제 → 그 회원의 리뷰는 ON DELETE CASCADE 로 함께 삭제 | [Q16.txt](Q16.txt) |
-| [Q17](#q17--reviewmovie_id-인덱스-생성-전후-실행-계획-비교) | 인덱스 | review.movie_id 인덱스 생성 전/후 실행 계획 비교 | [Q17.txt](Q17.txt) |
-| [B01](#b01--요구-a-①-inner-join--회원--리뷰-행이-늘어나므로-distinct-로-중복-제거) | 보너스: JOIN vs 서브쿼리 | 요구 A ① INNER JOIN — 회원 × 리뷰 행이 늘어나므로 DISTINCT 로 중복 제거 | [B01.txt](B01.txt) |
-| [B02](#b02--요구-a-②-exists--회원마다-리뷰가-하나라도-있나만-확인-찾으면-즉시-멈춤) | 보너스: JOIN vs 서브쿼리 | 요구 A ② EXISTS — 회원마다 "리뷰가 하나라도 있나"만 확인 (찾으면 즉시 멈춤) | [B02.txt](B02.txt) |
-| [B03](#b03--요구-a-③-in--리뷰를-쓴-member_id-목록을-먼저-만들고-그-안에-있는지-확인) | 보너스: JOIN vs 서브쿼리 | 요구 A ③ IN — 리뷰를 쓴 member_id 목록을 먼저 만들고 그 안에 있는지 확인 | [B03.txt](B03.txt) |
-| [B04](#b04--세-방식의-결과가-정확히-같은지-검증-차집합이-모두-0행이어야-함) | 보너스: JOIN vs 서브쿼리 | 세 방식의 결과가 정확히 같은지 검증 (차집합이 모두 0행이어야 함) | [B04.txt](B04.txt) |
-| [B05](#b05--실행-계획-비교-sqlite-전용-explain-query-plan) | 보너스: JOIN vs 서브쿼리 | 실행 계획 비교 [SQLite 전용: EXPLAIN QUERY PLAN] | [B05.txt](B05.txt) |
-| [B06](#b06--요구-b--left-join--group-by-와-상관-스칼라-서브쿼리의-결과-비교) | 보너스: JOIN vs 서브쿼리 | 요구 B — LEFT JOIN + GROUP BY 와 상관 스칼라 서브쿼리의 결과 비교 | [B06.txt](B06.txt) |
-| [B07](#b07--fk-위반-①-존재하지-않는-회원999의-리뷰를-insert) | 보너스: 정합성 | FK 위반 ① 존재하지 않는 회원(999)의 리뷰를 INSERT | [B07.txt](B07.txt) |
-| [B08](#b08--fk-위반-②-존재하지-않는-장르99로-영화를-insert) | 보너스: 정합성 | FK 위반 ② 존재하지 않는 장르(99)로 영화를 INSERT | [B08.txt](B08.txt) |
-| [B09](#b09--fk-위반-③-영화가-남아-있는-장르액션를-delete--on-delete-restrict) | 보너스: 정합성 | FK 위반 ③ 영화가 남아 있는 장르(액션)를 DELETE → ON DELETE RESTRICT | [B09.txt](B09.txt) |
-| [B10](#b10--check-위반-별점-6점-존재하지-않는-날짜-허용되지-않는-회원-상태) | 보너스: 정합성 | CHECK 위반: 별점 6점, 존재하지 않는 날짜, 허용되지 않는 회원 상태 | [B10.txt](B10.txt) |
-| [B11](#b11--unique-위반-같은-회원이-같은-영화에-두-번째-리뷰-이미-쓰는-이메일로-가입) | 보너스: 정합성 | UNIQUE 위반: 같은 회원이 같은 영화에 두 번째 리뷰, 이미 쓰는 이메일로 가입 | [B11.txt](B11.txt) |
-| [B12](#b12--not-null-위반-제목-없는-영화) | 보너스: 정합성 | NOT NULL 위반: 제목 없는 영화 | [B12.txt](B12.txt) |
-| [B13](#b13--fk-검사를-끄면-pragma-foreign_keys--off-상태에서는-고아-리뷰가-들어간다-sqlite-전용) | 보너스: 정합성 | FK 검사를 끄면? PRAGMA foreign_keys = OFF 상태에서는 고아 리뷰가 들어간다 [SQLite 전용] | [B13.txt](B13.txt) |
-| [B14](#b14--해결-부모회원를-먼저-만들고-자식리뷰을-넣는다--한-트랜잭션으로-묶어서) | 보너스: 정합성 | 해결: 부모(회원)를 먼저 만들고 자식(리뷰)을 넣는다 — 한 트랜잭션으로 묶어서 | [B14.txt](B14.txt) |
-| [R01](#r01--지표-1-월별-리뷰-활동-추이) | 보너스: 미니 리포트 | 지표 1. 월별 리뷰 활동 추이 | [R01.txt](R01.txt) |
-| [R02](#r02--지표-2-인기-영화-top-10--베이지안-가중-평점) | 보너스: 미니 리포트 | 지표 2. 인기 영화 TOP 10 — 베이지안 가중 평점 | [R02.txt](R02.txt) |
-| [R03](#r03--지표-3-장르별-만족도--호평률4점-이상--혹평률2점-이하) | 보너스: 미니 리포트 | 지표 3. 장르별 만족도 — 호평률(4점 이상) · 혹평률(2점 이하) | [R03.txt](R03.txt) |
+| ID | 분류 | 내용 | 결과 파일 | 실행 화면 |
+| --- | --- | --- | --- | --- |
+| [Q01](#q01--2020년-이후-개봉한-영화를-최신-개봉순으로-보기) | 기본 조회 | 2020년 이후 개봉한 영화를 최신 개봉순으로 보기 | [Q01.txt](Q01.txt) | [Q01.png](screenshots/Q01.png) |
+| [Q02](#q02--별점-5점-리뷰-중-가장-최근-5개) | 기본 조회 | 별점 5점 리뷰 중 가장 최근 5개 | [Q02.txt](Q02.txt) | [Q02.png](screenshots/Q02.png) |
+| [Q03](#q03--러닝타임-150분-이상인-긴-영화-긴-순서-같으면-제목순) | 기본 조회 | 러닝타임 150분 이상인 긴 영화 (긴 순서, 같으면 제목순) | [Q03.txt](Q03.txt) | [Q03.png](screenshots/Q03.png) |
+| [Q04](#q04--제목-검색-의-가-들어간-영화-like-부분-일치) | 기본 조회 | 제목 검색: '의' 가 들어간 영화 (LIKE 부분 일치) | [Q04.txt](Q04.txt) | [Q04.png](screenshots/Q04.png) |
+| [Q05](#q05--최근-리뷰-10개를-회원-닉네임영화-제목과-함께-보기-3개-테이블-조인) | 조인 (INNER) | 최근 리뷰 10개를 회원 닉네임·영화 제목과 함께 보기 (3개 테이블 조인) | [Q05.txt](Q05.txt) | [Q05.png](screenshots/Q05.png) |
+| [Q06](#q06--장르-이름과-함께-영화-목록-보기-장르--개봉일-순) | 조인 (INNER) | 장르 이름과 함께 영화 목록 보기 (장르 → 개봉일 순) | [Q06.txt](Q06.txt) | [Q06.png](screenshots/Q06.png) |
+| [Q07](#q07--리뷰를-한-번도-작성하지-않은-회원-찾기) | 조인 (LEFT) | 리뷰를 한 번도 작성하지 않은 회원 찾기 | [Q07.txt](Q07.txt) | [Q07.png](screenshots/Q07.png) |
+| [Q08](#q08--영화별-리뷰-수--리뷰가-없는-영화도-0으로-표시) | 조인 (LEFT) | 영화별 리뷰 수 — 리뷰가 없는 영화도 0으로 표시 | [Q08.txt](Q08.txt) | [Q08.png](screenshots/Q08.png) |
+| [Q09](#q09--평균-별점-top-5-영화-리뷰-3개-이상만-동점이면-리뷰-많은-순) | 집계 (랭킹) | 평균 별점 TOP 5 영화 (리뷰 3개 이상만, 동점이면 리뷰 많은 순) | [Q09.txt](Q09.txt) | [Q09.png](screenshots/Q09.png) |
+| [Q10](#q10--장르별-영화-수--리뷰-수--평균-별점-영화가-없는-장르도-포함) | 집계 | 장르별 영화 수 · 리뷰 수 · 평균 별점 (영화가 없는 장르도 포함) | [Q10.txt](Q10.txt) | [Q10.png](screenshots/Q10.png) |
+| [Q11](#q11--회원별-리뷰-수--평균-준-별점--총-관람-시간분--활동량-순) | 집계 | 회원별 리뷰 수 · 평균 준 별점 · 총 관람 시간(분) — 활동량 순 | [Q11.txt](Q11.txt) | [Q11.png](screenshots/Q11.png) |
+| [Q12](#q12--월별-리뷰-수와-평균-별점-추이) | 집계 (추가) | 월별 리뷰 수와 평균 별점 추이 | [Q12.txt](Q12.txt) | [Q12.png](screenshots/Q12.png) |
+| [Q13](#q13--전체-리뷰-평균-별점보다-평균이-높은-영화) | 서브쿼리 | 전체 리뷰 평균 별점보다 평균이 높은 영화 | [Q13.txt](Q13.txt) | [Q13.png](screenshots/Q13.png) |
+| [Q14](#q14--장르마다-평균-별점이-가장-높은-영화-동점이면-모두-표시) | 서브쿼리 (상관·추가) | 장르마다 평균 별점이 가장 높은 영화 (동점이면 모두 표시) | [Q14.txt](Q14.txt) | [Q14.png](screenshots/Q14.png) |
+| [Q15](#q15--2024-06-01-이후-리뷰가-없는-active-회원을-휴면dormant으로-전환) | 수정 (UPDATE) | 2024-06-01 이후 리뷰가 없는 ACTIVE 회원을 휴면(DORMANT)으로 전환 | [Q15.txt](Q15.txt) | [Q15.png](screenshots/Q15.png) |
+| [Q16](#q16--탈퇴withdrawn-회원-삭제--그-회원의-리뷰는-on-delete-cascade-로-함께-삭제) | 삭제 (DELETE) | 탈퇴(WITHDRAWN) 회원 삭제 → 그 회원의 리뷰는 ON DELETE CASCADE 로 함께 삭제 | [Q16.txt](Q16.txt) | [Q16.png](screenshots/Q16.png) |
+| [Q17](#q17--reviewmovie_id-인덱스-생성-전후-실행-계획-비교) | 인덱스 | review.movie_id 인덱스 생성 전/후 실행 계획 비교 | [Q17.txt](Q17.txt) | [Q17.png](screenshots/Q17.png) |
+| [B01](#b01--요구-a-①-inner-join--회원--리뷰-행이-늘어나므로-distinct-로-중복-제거) | 보너스: JOIN vs 서브쿼리 | 요구 A ① INNER JOIN — 회원 × 리뷰 행이 늘어나므로 DISTINCT 로 중복 제거 | [B01.txt](B01.txt) | - |
+| [B02](#b02--요구-a-②-exists--회원마다-리뷰가-하나라도-있나만-확인-찾으면-즉시-멈춤) | 보너스: JOIN vs 서브쿼리 | 요구 A ② EXISTS — 회원마다 "리뷰가 하나라도 있나"만 확인 (찾으면 즉시 멈춤) | [B02.txt](B02.txt) | - |
+| [B03](#b03--요구-a-③-in--리뷰를-쓴-member_id-목록을-먼저-만들고-그-안에-있는지-확인) | 보너스: JOIN vs 서브쿼리 | 요구 A ③ IN — 리뷰를 쓴 member_id 목록을 먼저 만들고 그 안에 있는지 확인 | [B03.txt](B03.txt) | - |
+| [B04](#b04--세-방식의-결과가-정확히-같은지-검증-차집합이-모두-0행이어야-함) | 보너스: JOIN vs 서브쿼리 | 세 방식의 결과가 정확히 같은지 검증 (차집합이 모두 0행이어야 함) | [B04.txt](B04.txt) | - |
+| [B05](#b05--실행-계획-비교-sqlite-전용-explain-query-plan) | 보너스: JOIN vs 서브쿼리 | 실행 계획 비교 [SQLite 전용: EXPLAIN QUERY PLAN] | [B05.txt](B05.txt) | - |
+| [B06](#b06--요구-b--left-join--group-by-와-상관-스칼라-서브쿼리의-결과-비교) | 보너스: JOIN vs 서브쿼리 | 요구 B — LEFT JOIN + GROUP BY 와 상관 스칼라 서브쿼리의 결과 비교 | [B06.txt](B06.txt) | - |
+| [B07](#b07--fk-위반-①-존재하지-않는-회원999의-리뷰를-insert) | 보너스: 정합성 | FK 위반 ① 존재하지 않는 회원(999)의 리뷰를 INSERT | [B07.txt](B07.txt) | - |
+| [B08](#b08--fk-위반-②-존재하지-않는-장르99로-영화를-insert) | 보너스: 정합성 | FK 위반 ② 존재하지 않는 장르(99)로 영화를 INSERT | [B08.txt](B08.txt) | - |
+| [B09](#b09--fk-위반-③-영화가-남아-있는-장르액션를-delete--on-delete-restrict) | 보너스: 정합성 | FK 위반 ③ 영화가 남아 있는 장르(액션)를 DELETE → ON DELETE RESTRICT | [B09.txt](B09.txt) | - |
+| [B10](#b10--check-위반-별점-6점-존재하지-않는-날짜-허용되지-않는-회원-상태) | 보너스: 정합성 | CHECK 위반: 별점 6점, 존재하지 않는 날짜, 허용되지 않는 회원 상태 | [B10.txt](B10.txt) | - |
+| [B11](#b11--unique-위반-같은-회원이-같은-영화에-두-번째-리뷰-이미-쓰는-이메일로-가입) | 보너스: 정합성 | UNIQUE 위반: 같은 회원이 같은 영화에 두 번째 리뷰, 이미 쓰는 이메일로 가입 | [B11.txt](B11.txt) | - |
+| [B12](#b12--not-null-위반-제목-없는-영화) | 보너스: 정합성 | NOT NULL 위반: 제목 없는 영화 | [B12.txt](B12.txt) | - |
+| [B13](#b13--fk-검사를-끄면-pragma-foreign_keys--off-상태에서는-고아-리뷰가-들어간다-sqlite-전용) | 보너스: 정합성 | FK 검사를 끄면? PRAGMA foreign_keys = OFF 상태에서는 고아 리뷰가 들어간다 [SQLite 전용] | [B13.txt](B13.txt) | - |
+| [B14](#b14--해결-부모회원를-먼저-만들고-자식리뷰을-넣는다--한-트랜잭션으로-묶어서) | 보너스: 정합성 | 해결: 부모(회원)를 먼저 만들고 자식(리뷰)을 넣는다 — 한 트랜잭션으로 묶어서 | [B14.txt](B14.txt) | - |
+| [R01](#r01--지표-1-월별-리뷰-활동-추이) | 보너스: 미니 리포트 | 지표 1. 월별 리뷰 활동 추이 | [R01.txt](R01.txt) | - |
+| [R02](#r02--지표-2-인기-영화-top-10--베이지안-가중-평점) | 보너스: 미니 리포트 | 지표 2. 인기 영화 TOP 10 — 베이지안 가중 평점 | [R02.txt](R02.txt) | - |
+| [R03](#r03--지표-3-장르별-만족도--호평률4점-이상--혹평률2점-이하) | 보너스: 미니 리포트 | 지표 3. 장르별 만족도 — 호평률(4점 이상) · 혹평률(2점 이하) | [R03.txt](R03.txt) | - |
 
 ## 결과
 
 ### Q01 · 2020년 이후 개봉한 영화를 최신 개봉순으로 보기
 
 `기본 조회` · 원본: [`sql/03_queries.sql`](../sql/03_queries.sql)
+
+실행 화면 (sqlite3 CLI): [`screenshots/Q01.png`](screenshots/Q01.png)
+
+![Q01 실행 화면](screenshots/Q01.png)
 
 ```sql
 SELECT title, release_date, running_time, country
@@ -75,6 +79,10 @@ ORDER BY release_date DESC;
 
 `기본 조회` · 원본: [`sql/03_queries.sql`](../sql/03_queries.sql)
 
+실행 화면 (sqlite3 CLI): [`screenshots/Q02.png`](screenshots/Q02.png)
+
+![Q02 실행 화면](screenshots/Q02.png)
+
 ```sql
 SELECT review_id, movie_id, member_id, content, created_at
 FROM review
@@ -97,6 +105,10 @@ LIMIT 5;
 
 `기본 조회` · 원본: [`sql/03_queries.sql`](../sql/03_queries.sql)
 
+실행 화면 (sqlite3 CLI): [`screenshots/Q03.png`](screenshots/Q03.png)
+
+![Q03 실행 화면](screenshots/Q03.png)
+
 ```sql
 SELECT title, running_time, director
 FROM movie
@@ -117,6 +129,10 @@ ORDER BY running_time DESC, title;
 ### Q04 · 제목 검색: '의' 가 들어간 영화 (LIKE 부분 일치)
 
 `기본 조회` · 원본: [`sql/03_queries.sql`](../sql/03_queries.sql)
+
+실행 화면 (sqlite3 CLI): [`screenshots/Q04.png`](screenshots/Q04.png)
+
+![Q04 실행 화면](screenshots/Q04.png)
 
 ```sql
 SELECT movie_id, title, release_date
@@ -139,6 +155,10 @@ ORDER BY release_date;
 
 `조인 (INNER)` · 원본: [`sql/03_queries.sql`](../sql/03_queries.sql)
 
+실행 화면 (sqlite3 CLI): [`screenshots/Q05.png`](screenshots/Q05.png)
+
+![Q05 실행 화면](screenshots/Q05.png)
+
 ```sql
 SELECT r.created_at,
        mb.nickname,
@@ -146,6 +166,8 @@ SELECT r.created_at,
        r.rating,
        COALESCE(r.content, '(별점만 남김)') AS content
 FROM review AS r
+-- INNER JOIN 은 ON 조건에 짝이 있는 행만 남긴다: 리뷰가 없는 회원 3명(12~14)과 영화 2편(18, 22)은 짝이 없어
+-- 이 조인 결과(78행)에서 빠진다. 짝이 없는 쪽을 NULL 로 채워 남기는 LEFT JOIN(Q07 · Q08)과 반대.
 INNER JOIN member AS mb ON mb.member_id = r.member_id     -- review.member_id (FK) → member.member_id (PK)
 INNER JOIN movie  AS mv ON mv.movie_id  = r.movie_id      -- review.movie_id  (FK) → movie.movie_id  (PK)
 ORDER BY r.created_at DESC
@@ -171,10 +193,14 @@ LIMIT 10;
 
 `조인 (INNER)` · 원본: [`sql/03_queries.sql`](../sql/03_queries.sql)
 
+실행 화면 (sqlite3 CLI): [`screenshots/Q06.png`](screenshots/Q06.png)
+
+![Q06 실행 화면](screenshots/Q06.png)
+
 ```sql
 SELECT g.name AS genre, m.title, m.release_date, m.director
 FROM movie AS m
-INNER JOIN genre AS g ON g.genre_id = m.genre_id
+INNER JOIN genre AS g ON g.genre_id = m.genre_id   -- 짝이 있는 행만: 영화가 없는 장르 '뮤지컬' 은 빠져 10개 중 9개 장르만 나온다
 ORDER BY g.genre_id, m.release_date;
 ```
 
@@ -209,6 +235,10 @@ ORDER BY g.genre_id, m.release_date;
 
 `조인 (LEFT)` · 원본: [`sql/03_queries.sql`](../sql/03_queries.sql)
 
+실행 화면 (sqlite3 CLI): [`screenshots/Q07.png`](screenshots/Q07.png)
+
+![Q07 실행 화면](screenshots/Q07.png)
+
 ```sql
 SELECT mb.member_id, mb.nickname, mb.joined_at, mb.status
 FROM member AS mb
@@ -228,6 +258,10 @@ ORDER BY mb.member_id;
 ### Q08 · 영화별 리뷰 수 — 리뷰가 없는 영화도 0으로 표시
 
 `조인 (LEFT)` · 원본: [`sql/03_queries.sql`](../sql/03_queries.sql)
+
+실행 화면 (sqlite3 CLI): [`screenshots/Q08.png`](screenshots/Q08.png)
+
+![Q08 실행 화면](screenshots/Q08.png)
 
 ```sql
 SELECT m.title,
@@ -269,6 +303,10 @@ ORDER BY review_count DESC, m.title;
 
 `집계 (랭킹)` · 원본: [`sql/03_queries.sql`](../sql/03_queries.sql)
 
+실행 화면 (sqlite3 CLI): [`screenshots/Q09.png`](screenshots/Q09.png)
+
+![Q09 실행 화면](screenshots/Q09.png)
+
 ```sql
 SELECT m.title,
        ROUND(AVG(r.rating), 2) AS avg_rating,
@@ -295,11 +333,17 @@ LIMIT 5;
 
 `집계` · 원본: [`sql/03_queries.sql`](../sql/03_queries.sql)
 
+실행 화면 (sqlite3 CLI): [`screenshots/Q10.png`](screenshots/Q10.png)
+
+![Q10 실행 화면](screenshots/Q10.png)
+
 ```sql
 SELECT g.name                              AS genre,
        COUNT(DISTINCT m.movie_id)          AS movie_count,   -- 리뷰 조인으로 영화 행이 복제되므로 DISTINCT
        COUNT(r.review_id)                  AS review_count,
        ROUND(AVG(r.rating), 2)             AS avg_rating     -- 리뷰가 없으면 AVG 는 NULL
+-- NULL 처리: COUNT(r.review_id) · AVG(r.rating) 는 NULL 을 건너뛰므로 리뷰 없는 '뮤지컬' 은 0 · NULL 이 된다.
+--            COUNT(*) 는 행 자체를 세서 1 이 됐을 것이다. 같은 원리로 전체 리뷰는 COUNT(*) 78, COUNT(content) 74 (내용 NULL 4건 제외)
 FROM genre AS g
 LEFT JOIN movie  AS m ON m.genre_id = g.genre_id
 LEFT JOIN review AS r ON r.movie_id = m.movie_id
@@ -325,6 +369,10 @@ ORDER BY review_count DESC, g.genre_id;
 ### Q11 · 회원별 리뷰 수 · 평균 준 별점 · 총 관람 시간(분) — 활동량 순
 
 `집계` · 원본: [`sql/03_queries.sql`](../sql/03_queries.sql)
+
+실행 화면 (sqlite3 CLI): [`screenshots/Q11.png`](screenshots/Q11.png)
+
+![Q11 실행 화면](screenshots/Q11.png)
 
 ```sql
 SELECT mb.nickname,
@@ -359,6 +407,10 @@ ORDER BY review_count DESC, avg_given DESC;
 
 `집계 (추가)` · 원본: [`sql/03_queries.sql`](../sql/03_queries.sql)
 
+실행 화면 (sqlite3 CLI): [`screenshots/Q12.png`](screenshots/Q12.png)
+
+![Q12 실행 화면](screenshots/Q12.png)
+
 _[SQLite 전용] strftime('%Y-%m', …). MySQL: DATE_FORMAT(created_at, '%Y-%m'), PostgreSQL: to_char(created_at, 'YYYY-MM')_
 
 ```sql
@@ -387,6 +439,10 @@ ORDER BY month;
 ### Q13 · 전체 리뷰 평균 별점보다 평균이 높은 영화
 
 `서브쿼리` · 원본: [`sql/03_queries.sql`](../sql/03_queries.sql)
+
+실행 화면 (sqlite3 CLI): [`screenshots/Q13.png`](screenshots/Q13.png)
+
+![Q13 실행 화면](screenshots/Q13.png)
 
 ```sql
 SELECT m.title,
@@ -419,6 +475,36 @@ ORDER BY avg_rating DESC, m.title;
 ### Q14 · 장르마다 평균 별점이 가장 높은 영화 (동점이면 모두 표시)
 
 `서브쿼리 (상관·추가)` · 원본: [`sql/03_queries.sql`](../sql/03_queries.sql)
+
+실행 화면 (sqlite3 CLI): [`screenshots/Q14.png`](screenshots/Q14.png)
+
+![Q14 실행 화면](screenshots/Q14.png)
+
+_중간 결과 확인: 드라마(genre_id 2)의 1단계 행(movie_avg)과 2단계 상관 서브쿼리 값(genre_max), 남는지 여부(kept)_
+
+```sql
+WITH movie_avg AS (
+    SELECT m.movie_id, m.genre_id, m.title, AVG(r.rating) AS avg_rating, COUNT(*) AS review_count
+    FROM movie AS m
+    INNER JOIN review AS r ON r.movie_id = m.movie_id
+    GROUP BY m.movie_id, m.genre_id, m.title
+)
+SELECT ma.movie_id, ma.title, ROUND(ma.avg_rating, 3) AS avg_rating, ma.review_count,
+       ROUND((SELECT MAX(x.avg_rating) FROM movie_avg AS x WHERE x.genre_id = ma.genre_id), 3) AS genre_max,
+       ma.avg_rating = (SELECT MAX(x.avg_rating) FROM movie_avg AS x WHERE x.genre_id = ma.genre_id) AS kept
+FROM movie_avg AS ma
+WHERE ma.genre_id = 2
+ORDER BY ma.avg_rating DESC;
+```
+
+| movie_id | title | avg_rating | review_count | genre_max | kept |
+| ---: | --- | ---: | ---: | ---: | ---: |
+| 8 | 서울의 봄 | 4.75 | 4 | 4.75 | 1 |
+| 1 | 기생충 | 4.714 | 7 | 4.75 | 0 |
+
+(2 rows)
+
+_최종: 모든 장르에 같은 규칙 적용_
 
 ```sql
 WITH movie_avg AS (                                   -- CTE: 영화별 평균을 이름 붙인 임시 결과로 만든다 (View 아님)
@@ -463,6 +549,10 @@ ORDER BY ma.avg_rating DESC, g.name;
 ### Q15 · 2024-06-01 이후 리뷰가 없는 ACTIVE 회원을 휴면(DORMANT)으로 전환
 
 `수정 (UPDATE)` · 원본: [`sql/03_queries.sql`](../sql/03_queries.sql)
+
+실행 화면 (sqlite3 CLI): [`screenshots/Q15.png`](screenshots/Q15.png)
+
+![Q15 실행 화면](screenshots/Q15.png)
 
 _변경 전: 대상 회원 확인_
 
@@ -516,6 +606,10 @@ ORDER BY status;
 
 `삭제 (DELETE)` · 원본: [`sql/03_queries.sql`](../sql/03_queries.sql)
 
+실행 화면 (sqlite3 CLI): [`screenshots/Q16.png`](screenshots/Q16.png)
+
+![Q16 실행 화면](screenshots/Q16.png)
+
 _삭제 전_
 
 ```sql
@@ -558,7 +652,11 @@ SELECT (SELECT COUNT(*) FROM member) AS member_count,
 
 `인덱스` · 원본: [`sql/03_queries.sql`](../sql/03_queries.sql)
 
-_적용 이유: review.movie_id 는 영화별 리뷰 조회·JOIN·GROUP BY(Q08~Q14)에 가장 자주 쓰이는 컬럼인데, SQLite 는 FK 컬럼에 인덱스를 자동으로 만들지 않고, UNIQUE(member_id, movie_id) 인덱스는 member_id 가 앞이라 movie_id 만으로는 사용할 수 없다. [SQLite 전용] EXPLAIN QUERY PLAN. MySQL/PostgreSQL: EXPLAIN 생성 전: 리뷰 테이블 전체를 훑는다 (SCAN)_
+실행 화면 (sqlite3 CLI): [`screenshots/Q17.png`](screenshots/Q17.png)
+
+![Q17 실행 화면](screenshots/Q17.png)
+
+_적용 이유: review.movie_id 는 영화별 리뷰 조회·JOIN·GROUP BY(Q08~Q14)에 가장 자주 쓰이는 컬럼인데, SQLite 는 FK 컬럼에 인덱스를 자동으로 만들지 않고, UNIQUE(member_id, movie_id) 인덱스는 member_id 가 앞이라 movie_id 만으로는 사용할 수 없다. [SQLite 전용] EXPLAIN QUERY PLAN. MySQL/PostgreSQL: EXPLAIN 생성 전: 리뷰 테이블 전체를 훑는다 (SCAN) — 78행을 모두 읽은 뒤 movie_id = 1 인 7행만 남긴다_
 
 ```sql
 EXPLAIN QUERY PLAN
@@ -570,13 +668,30 @@ QUERY PLAN
 `--SCAN review
 ```
 
+_생성 전 JOIN: 리뷰를 전부 훑고(SCAN r) 영화는 PK 로 찾은 뒤, 영화별로 묶으려고 임시 B-tree 로 다시 정렬한다_
+
+```sql
+EXPLAIN QUERY PLAN
+SELECT m.title, AVG(r.rating)
+FROM movie AS m
+INNER JOIN review AS r ON r.movie_id = m.movie_id
+GROUP BY m.movie_id;
+```
+
+```text
+QUERY PLAN
+|--SCAN r
+|--SEARCH m USING INTEGER PRIMARY KEY (rowid=?)
+`--USE TEMP B-TREE FOR GROUP BY
+```
+
 ```sql
 CREATE INDEX idx_review_movie_id ON review (movie_id);
 ```
 
 `OK`
 
-_생성 후: 인덱스로 movie_id = 1 인 행만 찾아간다 (SEARCH … USING INDEX)_
+_생성 후: 인덱스로 movie_id = 1 인 행만 찾아간다 (SEARCH … USING INDEX) — B-tree 에서 1 의 위치로 바로 가서 7행만 읽는다_
 
 ```sql
 EXPLAIN QUERY PLAN
@@ -588,7 +703,7 @@ QUERY PLAN
 `--SEARCH review USING INDEX idx_review_movie_id (movie_id=?)
 ```
 
-_같은 인덱스가 영화별 집계(Q09)의 JOIN 에도 쓰이는지 확인_
+_생성 후 JOIN: 영화를 PK 순서로 훑으며(SCAN m) 리뷰를 인덱스로 찾는다(SEARCH r USING INDEX) → 이미 영화 순서라 임시 B-tree 정렬이 사라진다_
 
 ```sql
 EXPLAIN QUERY PLAN

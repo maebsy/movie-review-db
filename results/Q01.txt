@@ -1,5 +1,6 @@
 Q01 [기본 조회] 2020년 이후 개봉한 영화를 최신 개봉순으로 보기
 source: sql/03_queries.sql
+screenshot: results/screenshots/Q01.png (sqlite3 CLI 실행 화면)
 
 sqlite> SELECT title, release_date, running_time, country
    ...> FROM movie

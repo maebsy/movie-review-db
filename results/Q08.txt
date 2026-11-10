@@ -1,5 +1,6 @@
 Q08 [조인 (LEFT)] 영화별 리뷰 수 — 리뷰가 없는 영화도 0으로 표시
 source: sql/03_queries.sql
+screenshot: results/screenshots/Q08.png (sqlite3 CLI 실행 화면)
 
 sqlite> SELECT m.title,
    ...>        COUNT(r.review_id) AS review_count            -- COUNT(*) 를 쓰면 리뷰 없는 영화도 1로 세진다
