@@ -1,6 +1,27 @@
 Q14 [서브쿼리 (상관·추가)] 장르마다 평균 별점이 가장 높은 영화 (동점이면 모두 표시)
 source: sql/03_queries.sql
+screenshot: results/screenshots/Q14.png (sqlite3 CLI 실행 화면)
 
+-- 중간 결과 확인: 드라마(genre_id 2)의 1단계 행(movie_avg)과 2단계 상관 서브쿼리 값(genre_max), 남는지 여부(kept)
+sqlite> WITH movie_avg AS (
+   ...>     SELECT m.movie_id, m.genre_id, m.title, AVG(r.rating) AS avg_rating, COUNT(*) AS review_count
+   ...>     FROM movie AS m
+   ...>     INNER JOIN review AS r ON r.movie_id = m.movie_id
+   ...>     GROUP BY m.movie_id, m.genre_id, m.title
+   ...> )
+   ...> SELECT ma.movie_id, ma.title, ROUND(ma.avg_rating, 3) AS avg_rating, ma.review_count,
+   ...>        ROUND((SELECT MAX(x.avg_rating) FROM movie_avg AS x WHERE x.genre_id = ma.genre_id), 3) AS genre_max,
+   ...>        ma.avg_rating = (SELECT MAX(x.avg_rating) FROM movie_avg AS x WHERE x.genre_id = ma.genre_id) AS kept
+   ...> FROM movie_avg AS ma
+   ...> WHERE ma.genre_id = 2
+   ...> ORDER BY ma.avg_rating DESC;
+movie_id | title     | avg_rating | review_count | genre_max | kept
+---------+-----------+------------+--------------+-----------+-----
+       8 | 서울의 봄 |       4.75 |            4 |      4.75 |    1
+       1 | 기생충    |      4.714 |            7 |      4.75 |    0
+(2 rows)
+
+-- 최종: 모든 장르에 같은 규칙 적용
 sqlite> WITH movie_avg AS (                                   -- CTE: 영화별 평균을 이름 붙인 임시 결과로 만든다 (View 아님)
    ...>     -- 1단계 기대 결과(리뷰가 있는 영화 20행 중 한 행): movie_id 1 | genre_id 2 | 기생충 | 4.714… | 7
    ...>     SELECT m.movie_id, m.genre_id, m.title,

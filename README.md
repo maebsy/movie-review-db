@@ -64,10 +64,12 @@ sqlite3 -box movie_review.db < sql/03_queries.sql
 | 샘플 데이터 INSERT SQL | [`sql/02_seed.sql`](sql/02_seed.sql) | genre 10 · member 15 · movie 22 · review 78 행 (부모 → 자식 순서, 한 트랜잭션) |
 | 쿼리 15개 SQL | [`sql/03_queries.sql`](sql/03_queries.sql) | 필수 15개(Q01~Q11 · Q13 · Q15~Q17) + 추가 2개(Q12 · Q14), 쿼리마다 "무엇을 확인하는지" 한 줄 설명 |
 | 실행 결과 폴더 | [`results/`](results/README.md) | 쿼리별 텍스트 결과 + 전체 결과 표 모음 |
-| 실행 화면 스크린샷 | [`results/screenshots/`](results/screenshots/README.md) | 주요 쿼리 9개 + 오류 재현 1개를 sqlite3 CLI 에서 실행한 화면 PNG |
+| 실행 화면 스크린샷 | [`results/screenshots/`](results/screenshots/README.md) | Q01~Q17 전부 + 오류 재현 1개를 sqlite3 CLI 에서 실행한 화면 PNG (각 `results/Qnn.txt` 셋째 줄에 경로) |
 | (선택) ERD | [`docs/erd.png`](docs/erd.png) | 원본: [`docs/erd.html`](docs/erd.html) |
 
 ## 스키마
+
+`genre(PK genre_id)` · `member(PK member_id)` · `movie(PK movie_id, FK genre_id)` · `review(PK review_id, FK member_id · movie_id)` — 4개 테이블이며 시드 행 수는 각각 10 / 15 / 22 / 78행입니다.
 
 ```mermaid
 erDiagram
@@ -130,7 +132,7 @@ erDiagram
 | 동시 편집 | 여러 사람이 편집할 때 충돌·규칙 관리가 어려움 | 트랜잭션으로 변경의 일관성 관리 |
 | 구조 변경 | 셀·열을 바로 바꾸기 쉬움 | 스키마 변경·기존 데이터 이관 비용이 듦 |
 
-자세한 비교는 [체크리스트 3-1](docs/checklist.md#3-1-데이터베이스가-엑셀과-무엇이-다른지-왜-테이블을-나눠서-저장하는지-비교하여-설명할-수-있는가-) 에 정리했습니다.
+엑셀은 VLOOKUP 참조의 원본 행 삭제를 막지 못해 `#N/A` 가 될 수 있지만, DB 는 FK 검사를 켜면 없는 회원 999 의 리뷰 INSERT 를 `FOREIGN KEY constraint failed` 로 거부합니다. 별점 6 은 CHECK, 같은 회원·영화의 중복 리뷰는 UNIQUE 로 거부하며 실제 오류 출력과 비교는 [체크리스트 3-1](docs/checklist.md#3-1-데이터베이스가-엑셀과-무엇이-다른지-왜-테이블을-나눠서-저장하는지-비교하여-설명할-수-있는가-) 에 정리했습니다.
 
 ## 쿼리 목록
 
@@ -154,7 +156,7 @@ erDiagram
 | Q16 | 필수 | 삭제 (DELETE) | 탈퇴 회원 삭제 → 리뷰 CASCADE 삭제 확인 | [Q16](results/Q16.txt) |
 | Q17 | 필수 | 인덱스 | `CREATE INDEX idx_review_movie_id` + 생성 전/후 실행 계획 | [Q17](results/Q17.txt) |
 
-과제가 요구한 범주별 개수(기본 4 · 조인 4 · 집계 3 · 서브쿼리 1 · 수정/삭제 2 · 인덱스 1)는 **필수 15개**가 정확히 채웁니다. **추가 2개**(Q12, Q14)는 시간 축 집계와 "그룹별 최댓값을 가진 행" 문제를 연습하려고 더 작성했고, SQL 마커의 분류에 `추가` 를 붙여 구분합니다. 이 구분은 `test_required_fifteen_match_categories` 가 검사합니다. 주요 쿼리의 실제 실행 화면은 [`results/screenshots/`](results/screenshots/README.md) 에 있습니다.
+과제가 요구한 범주별 개수(기본 4 · 조인 4 · 집계 3 · 서브쿼리 1 · 수정/삭제 2 · 인덱스 1)는 **필수 15개**가 정확히 채웁니다. **추가 2개**(Q12, Q14)는 시간 축 집계와 "그룹별 최댓값을 가진 행" 문제를 연습하려고 더 작성했고, SQL 마커의 분류에 `추가` 를 붙여 구분합니다. 이 구분은 `test_required_fifteen_match_categories` 가 검사합니다. Q01~Q17 의 실제 실행 화면은 [`results/screenshots/`](results/screenshots/README.md) 에 있습니다.
 
 결과 예시 ([`results/Q09.txt`](results/Q09.txt))
 

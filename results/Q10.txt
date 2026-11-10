@@ -1,10 +1,13 @@
 Q10 [집계] 장르별 영화 수 · 리뷰 수 · 평균 별점 (영화가 없는 장르도 포함)
 source: sql/03_queries.sql
+screenshot: results/screenshots/Q10.png (sqlite3 CLI 실행 화면)
 
 sqlite> SELECT g.name                              AS genre,
    ...>        COUNT(DISTINCT m.movie_id)          AS movie_count,   -- 리뷰 조인으로 영화 행이 복제되므로 DISTINCT
    ...>        COUNT(r.review_id)                  AS review_count,
    ...>        ROUND(AVG(r.rating), 2)             AS avg_rating     -- 리뷰가 없으면 AVG 는 NULL
+   ...> -- NULL 처리: COUNT(r.review_id) · AVG(r.rating) 는 NULL 을 건너뛰므로 리뷰 없는 '뮤지컬' 은 0 · NULL 이 된다.
+   ...> --            COUNT(*) 는 행 자체를 세서 1 이 됐을 것이다. 같은 원리로 전체 리뷰는 COUNT(*) 78, COUNT(content) 74 (내용 NULL 4건 제외)
    ...> FROM genre AS g
    ...> LEFT JOIN movie  AS m ON m.genre_id = g.genre_id
    ...> LEFT JOIN review AS r ON r.movie_id = m.movie_id

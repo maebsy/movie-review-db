@@ -50,6 +50,17 @@
 
 이제 회원 이메일은 `member` 에 한 번만 있으므로 한 곳만 고치면 되고, 리뷰가 없는 영화도 `movie` 에 존재할 수 있습니다(Q08 의 0건 영화 2편).
 
+### 정규화 확인
+
+| 테이블 | 1NF(원자값, 반복 그룹 없음) | 2NF(단일 컬럼 PK 라 부분 종속 없음) | 3NF(PK 가 아닌 컬럼끼리 종속 없음) |
+| --- | --- | --- | --- |
+| `genre` | 이름·설명을 각각 한 값으로 저장합니다 | `genre_id` 전체에 종속됩니다 | 이름·설명 사이에 별도 종속이 없습니다 |
+| `member` | 이메일·닉네임 등을 각각 한 값으로 저장합니다 | `member_id` 전체에 종속됩니다 | 이메일·닉네임은 후보키이며 다른 일반 속성 사이에 종속이 없습니다 |
+| `movie` | 대표 장르 하나와 영화 속성을 저장합니다 | `movie_id` 전체에 종속됩니다 | 장르명은 `movie` 에 두지 않고 `genre` 로 분리합니다 |
+| `review` | 별점·내용·작성일을 각각 한 값으로 저장합니다 | `review_id` 전체에 종속됩니다 | 회원·영화 정보는 저장하지 않고 FK 로 연결합니다 |
+
+한 시트 방식에서는 리뷰 키 → 영화 키 → 영화 정보로 이행 종속이 생겨 3NF 를 위반합니다.
+
 ## 3. 관계 (1:N)
 
 | 관계 | FK | 도메인 의미 | 데이터 예시 | FK NULL 허용 여부 | ON DELETE 동작과 그 영향 |
@@ -85,6 +96,17 @@ SQLite 의 타입은 다섯 가지 저장 클래스(NULL, INTEGER, REAL, TEXT, B
 
 SQLite 의 일반 INTEGER 값은 크기에 따라 1·2·3·4·6·8바이트로 저장됩니다(0·1은 전용 코드로 값 저장 공간이 0바이트입니다). `INTEGER PRIMARY KEY` 는 별도의 가변 길이 rowid 로 저장되므로 이 값 크기 규칙과 구분합니다.
 
+### PK: 대체키(INTEGER) vs 자연키
+
+모든 PK 는 `INTEGER PRIMARY KEY` 로, rowid 별칭을 직접 탐색하므로 조회·조인 시 별도 PK 인덱스를 거치는 비용을 줄입니다.
+
+| 테이블 | 대체키를 선택한 이유 |
+| --- | --- |
+| `genre` | 장르명은 바뀔 수 있어 `UNIQUE` 로 중복만 막고, 참조에는 `genre_id` 를 씁니다 |
+| `member` | email·nickname 은 바뀔 수 있어 `UNIQUE` 로만 보장하고, 안정적인 `member_id` 를 PK 로 씁니다 |
+| `movie` | `(title, release_date)` 는 두 컬럼 문자열이라 FK 로 들고 다니기 무거워 `UNIQUE` 로 두고 `movie_id` 로 연결합니다 |
+| `review` | `(member_id, movie_id)` 의 중복은 `UNIQUE` 로 막고, 리뷰 한 건은 단일 `review_id` 로 조회·수정합니다 |
+
 ## 5. 제약조건
 
 | 제약 | 적용 위치 | 막는 상황 |
@@ -97,11 +119,13 @@ SQLite 의 일반 INTEGER 값은 크기에 따라 1·2·3·4·6·8바이트로 �
 
 ### FK 삭제 정책
 
-| FK | 정책 | 이유 |
-| --- | --- | --- |
-| `movie.genre_id` | `ON DELETE RESTRICT` | 장르를 실수로 지워서 영화들이 장르를 잃는 일을 막는다. 장르를 없애려면 영화를 다른 장르로 옮긴 뒤 지워야 함 (B09) |
-| `review.member_id` | `ON DELETE CASCADE` | 회원이 탈퇴(삭제)하면 그 회원의 리뷰도 함께 지운다 (Q16: 리뷰 78 → 76). 실무에서는 통계 보존을 위해 회원을 지우지 않고 `status = 'WITHDRAWN'` 으로만 표시하는 소프트 삭제를 더 많이 쓴다 |
-| `review.movie_id` | `ON DELETE CASCADE` | 영화가 없어지면 그 영화의 리뷰도 의미가 없다 |
+| FK | 정책 | ON UPDATE 정책 | 참조 도메인 | 이유 |
+| --- | --- | --- | --- | --- |
+| `movie.genre_id` | `ON DELETE RESTRICT` | `CASCADE` | `movie.genre_id → genre.genre_id`: 존재하는 정수 키, NULL 불가. 시드 부모 1~10, 실제 FK 1~9 | 참조 중인 장르 삭제를 막습니다(B09). 장르 키 변경은 영화에도 반영합니다 |
+| `review.member_id` | `ON DELETE CASCADE` | 미지정 = `NO ACTION` | `review.member_id → member.member_id`: 존재하는 정수 키, NULL 불가. 시드 부모·실제 FK 모두 1~15 | 회원 삭제 시 리뷰도 삭제합니다(Q16: 78 → 76). 참조 중인 회원 키 변경은 거부합니다. 통계 보존이 필요하면 `status = 'WITHDRAWN'` 으로 표시하는 소프트 삭제를 고려합니다 |
+| `review.movie_id` | `ON DELETE CASCADE` | 미지정 = `NO ACTION` | `review.movie_id → movie.movie_id`: 존재하는 정수 키, NULL 불가. 시드 부모 1~22, 실제 FK 1~21 | 영화 삭제 시 리뷰도 삭제하고, 참조 중인 영화 키 변경은 거부합니다 |
+
+범위는 시드에서 확인한 값이며 FK 의 상·하한 제약은 아닙니다. `rating` 은 FK 가 아니며 `CHECK (rating BETWEEN 1 AND 5)` 로 1~5 도메인을 제한합니다(시드 최솟값 1, 최댓값 5).
 
 ### SQLite 에서 주의한 점 두 가지
 

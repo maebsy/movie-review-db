@@ -1,5 +1,6 @@
 Q04 [기본 조회] 제목 검색: '의' 가 들어간 영화 (LIKE 부분 일치)
 source: sql/03_queries.sql
+screenshot: results/screenshots/Q04.png (sqlite3 CLI 실행 화면)
 
 sqlite> SELECT movie_id, title, release_date
    ...> FROM movie
