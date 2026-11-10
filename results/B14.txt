@@ -1,5 +1,6 @@
 B14 [보너스: 정합성] 해결: 부모(회원)를 먼저 만들고 자식(리뷰)을 넣는다 — 한 트랜잭션으로 묶어서
 source: sql/05_bonus_integrity.sql
+screenshot: results/screenshots/B14.png (sqlite3 CLI 실행 화면)
 
 sqlite> BEGIN TRANSACTION;
 OK

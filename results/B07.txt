@@ -1,5 +1,6 @@
 B07 [보너스: 정합성] FK 위반 ① 존재하지 않는 회원(999)의 리뷰를 INSERT
 source: sql/05_bonus_integrity.sql
+screenshot: results/screenshots/B07.png (sqlite3 CLI 실행 화면)
 
 sqlite> INSERT INTO review (member_id, movie_id, rating, content, created_at)
    ...> VALUES (999, 1, 5, '없는 회원이 쓴 리뷰', '2024-10-01 10:00:00');

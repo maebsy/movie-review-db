@@ -1,0 +1,24 @@
+인덱스 벤치마크 — idx_review_movie_id (Q17) 생성 전/후 실행 시간
+생성: scripts/bench_index.py (이 파일은 --check 비교 대상이 아님, 시간은 컴퓨터마다 다름)
+환경: Python 3.14.4 · SQLite 3.46.1 · x86_64
+측정: 같은 쿼리를 반복 실행한 1회 평균, 5번 반복의 중앙값
+
+[시드 데이터] review 78행 · movie 22편
+  영화 1편의 리뷰 조회 (WHERE movie_id = ?, 500회 평균)
+    인덱스 전     0.0239 ms   계획: SCAN review
+    인덱스 후     0.0197 ms   계획: SEARCH review USING INDEX idx_review_movie_id (movie_id=?)
+    → 1.2배
+  영화별 평균 (JOIN + GROUP BY, Q09 와 같은 형태, 1회)
+    인덱스 전       0.08 ms   계획: SCAN r / SEARCH m USING INTEGER PRIMARY KEY (rowid=?) / USE TEMP B-TREE FOR GROUP BY
+    인덱스 후       0.07 ms   계획: SCAN m / SEARCH r USING INDEX idx_review_movie_id (movie_id=?)
+    → 1.2배
+
+[확장 데이터 (시드 + 가상 회원 2,000 · 영화 500 · 리뷰 200,000)] review 200,078행 · movie 522편
+  영화 1편의 리뷰 조회 (WHERE movie_id = ?, 500회 평균)
+    인덱스 전     9.9256 ms   계획: SCAN review
+    인덱스 후     0.5827 ms   계획: SEARCH review USING INDEX idx_review_movie_id (movie_id=?)
+    → 17.0배
+  영화별 평균 (JOIN + GROUP BY, Q09 와 같은 형태, 1회)
+    인덱스 전     113.72 ms   계획: SCAN r / SEARCH m USING INTEGER PRIMARY KEY (rowid=?) / USE TEMP B-TREE FOR GROUP BY
+    인덱스 후     231.93 ms   계획: SCAN m / SEARCH r USING INDEX idx_review_movie_id (movie_id=?)
+    → 0.5배

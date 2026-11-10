@@ -2,6 +2,12 @@ Q17 [인덱스] review.movie_id 인덱스 생성 전/후 실행 계획 비교
 source: sql/03_queries.sql
 screenshot: results/screenshots/Q17.png (sqlite3 CLI 실행 화면)
 
+-- 결과: results/Q17.txt · 실행 화면: results/screenshots/Q17.png · 실행 시간 비교: results/bench_index.txt
+-- 실행 시간 (scripts/bench_index.py, 5회 중앙값, SQLite 3.46.1):
+-- 시드 78행        영화 1편 조회 0.0239 → 0.0197 ms (1.2배, 측정 오차 수준)
+-- 리뷰 200,078행   영화 1편 조회 9.93 → 0.58 ms (17.0배) — 인덱스가 필요한 이유
+-- 전체 JOIN + GROUP BY 113.7 → 231.9 ms (0.5배, 오히려 느림) — 전부 읽을 때는 순차 스캔이 인덱스로
+-- 영화마다 찾아가는 것보다 싸다. 계획이 바뀐다고 항상 빨라지지는 않는다
 -- 적용 이유: review.movie_id 는 영화별 리뷰 조회·JOIN·GROUP BY(Q08~Q14)에 가장 자주 쓰이는 컬럼인데,
 -- SQLite 는 FK 컬럼에 인덱스를 자동으로 만들지 않고, UNIQUE(member_id, movie_id) 인덱스는
 -- member_id 가 앞이라 movie_id 만으로는 사용할 수 없다.

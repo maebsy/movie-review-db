@@ -19,6 +19,8 @@
 --   실행 순서와 의존성: Q01~Q14 는 읽기 전용이라 순서와 무관 → Q15 UPDATE(회원 상태 변경) → Q16 DELETE(회원 1명 ·
 --                    리뷰 2건 삭제, 이후 리뷰 76행) → Q17 인덱스 생성(결과 행은 그대로, 실행 계획만 바뀜).
 --                    Q15·Q16 이 데이터를 바꾸므로 처음부터 다시 실행하려면 01_schema → 02_seed 부터.
+--   실행 결과 · 화면: results/Q01.txt ~ results/Q17.txt, results/screenshots/Q01.png ~ Q17.png
+--                    (삭제 Q16 · 인덱스 Q17 포함 17개 모두. 각 Qnn.txt 셋째 줄에 화면 경로)
 --
 --   02_seed.sql 직후의 데이터 기준이며, Q15·Q16 은 데이터를 바꾸므로 순서대로 실행한다.
 --   각 쿼리 위의 "-- @Qnn | 분류 | 설명" 줄은 scripts/run_all.py 가 결과 파일 이름과 제목으로 사용한다.
@@ -94,12 +96,23 @@ LEFT JOIN review AS r ON r.movie_id = m.movie_id
 GROUP BY m.movie_id, m.title
 ORDER BY review_count DESC, m.title;
 
+-- LEFT JOIN 이 만든 NULL 처리: 리뷰가 없는 영화는 리뷰 쪽 컬럼이 전부 NULL → COALESCE(값, 대체값) 로 화면용 값으로 바꾼다
+SELECT m.title,
+       COUNT(r.review_id)                          AS review_count,
+       COALESCE(ROUND(AVG(r.rating), 2), '리뷰 없음') AS avg_rating,
+       COALESCE(MAX(r.created_at), '-')             AS last_review_at
+FROM movie AS m
+LEFT JOIN review AS r ON r.movie_id = m.movie_id
+GROUP BY m.movie_id, m.title
+HAVING COUNT(r.review_id) = 0
+ORDER BY m.title;
+
 
 -- @Q09 | 집계 (랭킹) | 평균 별점 TOP 5 영화 (리뷰 3개 이상만, 동점이면 리뷰 많은 순)
 SELECT m.title,
        ROUND(AVG(r.rating), 2) AS avg_rating,
-       COUNT(*)                AS review_count
-FROM movie AS m
+       COUNT(*)                AS review_count       -- COUNT(*) 는 행 수, COUNT(col) 은 NULL 이 아닌 값 수, AVG 는 NULL 을 빼고 평균
+FROM movie AS m                                      -- (예: 전체 리뷰 COUNT(*) 78 · COUNT(content) 74 — 내용 NULL 4건은 COUNT(content) 에서 빠짐)
 INNER JOIN review AS r ON r.movie_id = m.movie_id
 GROUP BY m.movie_id, m.title
 HAVING COUNT(*) >= 3                                 -- 그룹을 만든 뒤 거르는 조건은 WHERE 가 아니라 HAVING
@@ -170,6 +183,11 @@ WHERE ma.genre_id = 2
 ORDER BY ma.avg_rating DESC;
 
 -- 최종: 모든 장르에 같은 규칙 적용
+-- 단계별 행 수와 비용 (시드 기준)
+--   1단계 CTE      review 78행 → 영화별 GROUP BY → movie_avg 20행 (리뷰가 있는 영화)
+--   2단계 상관 서브쿼리  바깥 20행마다 같은 장르의 movie_avg 를 다시 훑어 MAX 계산 → 최대 20 × 20 = 400번 비교 (SQLite 가 CTE 를 그때그때 계산할 수 있어 규모가 커지면 비용이 큰 부분)
+--   3단계 genre JOIN    남은 행마다 genre PK 로 1번 찾기 (PK 검색)
+--   4단계 결과          11행 (장르 9개, 동점 2쌍) → 윈도 함수 RANK() 로 바꾸면 movie_avg 를 한 번만 훑는다
 WITH movie_avg AS (                                   -- CTE: 영화별 평균을 이름 붙인 임시 결과로 만든다 (View 아님)
     -- 1단계 기대 결과(리뷰가 있는 영화 20행 중 한 행): movie_id 1 | genre_id 2 | 기생충 | 4.714… | 7
     SELECT m.movie_id, m.genre_id, m.title,
@@ -217,6 +235,7 @@ ORDER BY status;
 
 
 -- @Q16 | 삭제 (DELETE) | 탈퇴(WITHDRAWN) 회원 삭제 → 그 회원의 리뷰는 ON DELETE CASCADE 로 함께 삭제
+-- 결과: results/Q16.txt · 실행 화면: results/screenshots/Q16.png
 -- 삭제 전
 SELECT mb.nickname, mb.status, COUNT(r.review_id) AS review_count
 FROM member AS mb
@@ -235,6 +254,12 @@ SELECT (SELECT COUNT(*) FROM member) AS member_count,
 
 
 -- @Q17 | 인덱스 | review.movie_id 인덱스 생성 전/후 실행 계획 비교
+-- 결과: results/Q17.txt · 실행 화면: results/screenshots/Q17.png · 실행 시간 비교: results/bench_index.txt
+-- 실행 시간 (scripts/bench_index.py, 5회 중앙값, SQLite 3.46.1):
+--   시드 78행        영화 1편 조회 0.0239 → 0.0197 ms (1.2배, 측정 오차 수준)
+--   리뷰 200,078행   영화 1편 조회 9.93 → 0.58 ms (17.0배) — 인덱스가 필요한 이유
+--                    전체 JOIN + GROUP BY 113.7 → 231.9 ms (0.5배, 오히려 느림) — 전부 읽을 때는 순차 스캔이 인덱스로
+--                    영화마다 찾아가는 것보다 싸다. 계획이 바뀐다고 항상 빨라지지는 않는다
 -- 적용 이유: review.movie_id 는 영화별 리뷰 조회·JOIN·GROUP BY(Q08~Q14)에 가장 자주 쓰이는 컬럼인데,
 --           SQLite 는 FK 컬럼에 인덱스를 자동으로 만들지 않고, UNIQUE(member_id, movie_id) 인덱스는
 --           member_id 가 앞이라 movie_id 만으로는 사용할 수 없다.

@@ -2,6 +2,7 @@ Q16 [삭제 (DELETE)] 탈퇴(WITHDRAWN) 회원 삭제 → 그 회원의 리뷰�
 source: sql/03_queries.sql
 screenshot: results/screenshots/Q16.png (sqlite3 CLI 실행 화면)
 
+-- 결과: results/Q16.txt · 실행 화면: results/screenshots/Q16.png
 -- 삭제 전
 sqlite> SELECT mb.nickname, mb.status, COUNT(r.review_id) AS review_count
    ...> FROM member AS mb
