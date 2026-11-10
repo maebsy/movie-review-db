@@ -5,6 +5,14 @@
 --   (자식 행은 참조할 부모 행이 먼저 있어야 FK 검사를 통과한다)
 --
 --   genre 10 · member 15 · movie 22 · review 78 행
+--   로드: sqlite3 movie_review.db < sql/02_seed.sql (01_schema.sql 다음, 한 트랜잭션) 또는 python scripts/run_all.py 가 자동 실행
+--         테이블별 행 수 · FK 위반 0건 확인: results/00_table_counts.txt
+--
+--   테이블별 샘플 요약
+--     genre  10  액션 · 드라마 · 코미디 · SF · 애니메이션 · 로맨스 · 공포 · 스릴러 · 판타지 · 뮤지컬(영화 0편)
+--     member 15  상태 ACTIVE 13 · DORMANT 1 · WITHDRAWN 1, 가입일 2023-01-15 ~ 2024-03-02, birth_year 1978 ~ 2004
+--     movie  22  개봉일 2001-12-14 ~ 2024-06-12, 러닝타임 94 ~ 181분, 장르 9개에 분포
+--     review 78  작성일 2024-01-06 ~ 2024-09-25, 별점 1:1 · 2:2 · 3:10 · 4:35 · 5:30, content NULL 4건
 --   영화 정보(개봉일·러닝타임)는 실습용 참고 데이터로, 실제와 다를 수 있습니다.
 --   회원·리뷰는 모두 가상 데이터이며 이메일은 예시 도메인(example.com)을 사용합니다.
 --

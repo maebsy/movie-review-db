@@ -1,5 +1,6 @@
 B10 [보너스: 정합성] CHECK 위반: 별점 6점, 존재하지 않는 날짜, 허용되지 않는 회원 상태
 source: sql/05_bonus_integrity.sql
+screenshot: results/screenshots/B10.png (sqlite3 CLI 실행 화면)
 
 sqlite> INSERT INTO review (member_id, movie_id, rating, content, created_at)
    ...> VALUES (12, 1, 6, '별점 6점?', '2024-10-01 10:00:00');

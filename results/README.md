@@ -34,14 +34,14 @@
 | [B04](#b04--세-방식의-결과가-정확히-같은지-검증-차집합이-모두-0행이어야-함) | 보너스: JOIN vs 서브쿼리 | 세 방식의 결과가 정확히 같은지 검증 (차집합이 모두 0행이어야 함) | [B04.txt](B04.txt) | - |
 | [B05](#b05--실행-계획-비교-sqlite-전용-explain-query-plan) | 보너스: JOIN vs 서브쿼리 | 실행 계획 비교 [SQLite 전용: EXPLAIN QUERY PLAN] | [B05.txt](B05.txt) | - |
 | [B06](#b06--요구-b--left-join--group-by-와-상관-스칼라-서브쿼리의-결과-비교) | 보너스: JOIN vs 서브쿼리 | 요구 B — LEFT JOIN + GROUP BY 와 상관 스칼라 서브쿼리의 결과 비교 | [B06.txt](B06.txt) | - |
-| [B07](#b07--fk-위반-①-존재하지-않는-회원999의-리뷰를-insert) | 보너스: 정합성 | FK 위반 ① 존재하지 않는 회원(999)의 리뷰를 INSERT | [B07.txt](B07.txt) | - |
-| [B08](#b08--fk-위반-②-존재하지-않는-장르99로-영화를-insert) | 보너스: 정합성 | FK 위반 ② 존재하지 않는 장르(99)로 영화를 INSERT | [B08.txt](B08.txt) | - |
-| [B09](#b09--fk-위반-③-영화가-남아-있는-장르액션를-delete--on-delete-restrict) | 보너스: 정합성 | FK 위반 ③ 영화가 남아 있는 장르(액션)를 DELETE → ON DELETE RESTRICT | [B09.txt](B09.txt) | - |
-| [B10](#b10--check-위반-별점-6점-존재하지-않는-날짜-허용되지-않는-회원-상태) | 보너스: 정합성 | CHECK 위반: 별점 6점, 존재하지 않는 날짜, 허용되지 않는 회원 상태 | [B10.txt](B10.txt) | - |
-| [B11](#b11--unique-위반-같은-회원이-같은-영화에-두-번째-리뷰-이미-쓰는-이메일로-가입) | 보너스: 정합성 | UNIQUE 위반: 같은 회원이 같은 영화에 두 번째 리뷰, 이미 쓰는 이메일로 가입 | [B11.txt](B11.txt) | - |
-| [B12](#b12--not-null-위반-제목-없는-영화) | 보너스: 정합성 | NOT NULL 위반: 제목 없는 영화 | [B12.txt](B12.txt) | - |
-| [B13](#b13--fk-검사를-끄면-pragma-foreign_keys--off-상태에서는-고아-리뷰가-들어간다-sqlite-전용) | 보너스: 정합성 | FK 검사를 끄면? PRAGMA foreign_keys = OFF 상태에서는 고아 리뷰가 들어간다 [SQLite 전용] | [B13.txt](B13.txt) | - |
-| [B14](#b14--해결-부모회원를-먼저-만들고-자식리뷰을-넣는다--한-트랜잭션으로-묶어서) | 보너스: 정합성 | 해결: 부모(회원)를 먼저 만들고 자식(리뷰)을 넣는다 — 한 트랜잭션으로 묶어서 | [B14.txt](B14.txt) | - |
+| [B07](#b07--fk-위반-①-존재하지-않는-회원999의-리뷰를-insert) | 보너스: 정합성 | FK 위반 ① 존재하지 않는 회원(999)의 리뷰를 INSERT | [B07.txt](B07.txt) | [B07.png](screenshots/B07.png) |
+| [B08](#b08--fk-위반-②-존재하지-않는-장르99로-영화를-insert) | 보너스: 정합성 | FK 위반 ② 존재하지 않는 장르(99)로 영화를 INSERT | [B08.txt](B08.txt) | [B08.png](screenshots/B08.png) |
+| [B09](#b09--fk-위반-③-영화가-남아-있는-장르액션를-delete--on-delete-restrict) | 보너스: 정합성 | FK 위반 ③ 영화가 남아 있는 장르(액션)를 DELETE → ON DELETE RESTRICT | [B09.txt](B09.txt) | [B09.png](screenshots/B09.png) |
+| [B10](#b10--check-위반-별점-6점-존재하지-않는-날짜-허용되지-않는-회원-상태) | 보너스: 정합성 | CHECK 위반: 별점 6점, 존재하지 않는 날짜, 허용되지 않는 회원 상태 | [B10.txt](B10.txt) | [B10.png](screenshots/B10.png) |
+| [B11](#b11--unique-위반-같은-회원이-같은-영화에-두-번째-리뷰-이미-쓰는-이메일로-가입) | 보너스: 정합성 | UNIQUE 위반: 같은 회원이 같은 영화에 두 번째 리뷰, 이미 쓰는 이메일로 가입 | [B11.txt](B11.txt) | [B11.png](screenshots/B11.png) |
+| [B12](#b12--not-null-위반-제목-없는-영화) | 보너스: 정합성 | NOT NULL 위반: 제목 없는 영화 | [B12.txt](B12.txt) | [B12.png](screenshots/B12.png) |
+| [B13](#b13--fk-검사를-끄면-pragma-foreign_keys--off-상태에서는-고아-리뷰가-들어간다-sqlite-전용) | 보너스: 정합성 | FK 검사를 끄면? PRAGMA foreign_keys = OFF 상태에서는 고아 리뷰가 들어간다 [SQLite 전용] | [B13.txt](B13.txt) | [B13.png](screenshots/B13.png) |
+| [B14](#b14--해결-부모회원를-먼저-만들고-자식리뷰을-넣는다--한-트랜잭션으로-묶어서) | 보너스: 정합성 | 해결: 부모(회원)를 먼저 만들고 자식(리뷰)을 넣는다 — 한 트랜잭션으로 묶어서 | [B14.txt](B14.txt) | [B14.png](screenshots/B14.png) |
 | [R01](#r01--지표-1-월별-리뷰-활동-추이) | 보너스: 미니 리포트 | 지표 1. 월별 리뷰 활동 추이 | [R01.txt](R01.txt) | - |
 | [R02](#r02--지표-2-인기-영화-top-10--베이지안-가중-평점) | 보너스: 미니 리포트 | 지표 2. 인기 영화 TOP 10 — 베이지안 가중 평점 | [R02.txt](R02.txt) | - |
 | [R03](#r03--지표-3-장르별-만족도--호평률4점-이상--혹평률2점-이하) | 보너스: 미니 리포트 | 지표 3. 장르별 만족도 — 호평률(4점 이상) · 혹평률(2점 이하) | [R03.txt](R03.txt) | - |
@@ -299,6 +299,27 @@ ORDER BY review_count DESC, m.title;
 
 (22 rows)
 
+_LEFT JOIN 이 만든 NULL 처리: 리뷰가 없는 영화는 리뷰 쪽 컬럼이 전부 NULL → COALESCE(값, 대체값) 로 화면용 값으로 바꾼다_
+
+```sql
+SELECT m.title,
+       COUNT(r.review_id)                          AS review_count,
+       COALESCE(ROUND(AVG(r.rating), 2), '리뷰 없음') AS avg_rating,
+       COALESCE(MAX(r.created_at), '-')             AS last_review_at
+FROM movie AS m
+LEFT JOIN review AS r ON r.movie_id = m.movie_id
+GROUP BY m.movie_id, m.title
+HAVING COUNT(r.review_id) = 0
+ORDER BY m.title;
+```
+
+| title | review_count | avg_rating | last_review_at |
+| --- | ---: | --- | --- |
+| 7번방의 선물 | 0 | 리뷰 없음 | - |
+| 반지의 제왕: 반지 원정대 | 0 | 리뷰 없음 | - |
+
+(2 rows)
+
 ### Q09 · 평균 별점 TOP 5 영화 (리뷰 3개 이상만, 동점이면 리뷰 많은 순)
 
 `집계 (랭킹)` · 원본: [`sql/03_queries.sql`](../sql/03_queries.sql)
@@ -310,8 +331,8 @@ ORDER BY review_count DESC, m.title;
 ```sql
 SELECT m.title,
        ROUND(AVG(r.rating), 2) AS avg_rating,
-       COUNT(*)                AS review_count
-FROM movie AS m
+       COUNT(*)                AS review_count       -- COUNT(*) 는 행 수, COUNT(col) 은 NULL 이 아닌 값 수, AVG 는 NULL 을 빼고 평균
+FROM movie AS m                                      -- (예: 전체 리뷰 COUNT(*) 78 · COUNT(content) 74 — 내용 NULL 4건은 COUNT(content) 에서 빠짐)
 INNER JOIN review AS r ON r.movie_id = m.movie_id
 GROUP BY m.movie_id, m.title
 HAVING COUNT(*) >= 3                                 -- 그룹을 만든 뒤 거르는 조건은 WHERE 가 아니라 HAVING
@@ -504,7 +525,7 @@ ORDER BY ma.avg_rating DESC;
 
 (2 rows)
 
-_최종: 모든 장르에 같은 규칙 적용_
+_최종: 모든 장르에 같은 규칙 적용 단계별 행 수와 비용 (시드 기준) 1단계 CTE      review 78행 → 영화별 GROUP BY → movie_avg 20행 (리뷰가 있는 영화) 2단계 상관 서브쿼리  바깥 20행마다 같은 장르의 movie_avg 를 다시 훑어 MAX 계산 → 최대 20 × 20 = 400번 비교 (SQLite 가 CTE 를 그때그때 계산할 수 있어 규모가 커지면 비용이 큰 부분) 3단계 genre JOIN    남은 행마다 genre PK 로 1번 찾기 (PK 검색) 4단계 결과          11행 (장르 9개, 동점 2쌍) → 윈도 함수 RANK() 로 바꾸면 movie_avg 를 한 번만 훑는다_
 
 ```sql
 WITH movie_avg AS (                                   -- CTE: 영화별 평균을 이름 붙인 임시 결과로 만든다 (View 아님)
@@ -610,7 +631,7 @@ ORDER BY status;
 
 ![Q16 실행 화면](screenshots/Q16.png)
 
-_삭제 전_
+_결과: results/Q16.txt · 실행 화면: results/screenshots/Q16.png 삭제 전_
 
 ```sql
 SELECT mb.nickname, mb.status, COUNT(r.review_id) AS review_count
@@ -656,7 +677,7 @@ SELECT (SELECT COUNT(*) FROM member) AS member_count,
 
 ![Q17 실행 화면](screenshots/Q17.png)
 
-_적용 이유: review.movie_id 는 영화별 리뷰 조회·JOIN·GROUP BY(Q08~Q14)에 가장 자주 쓰이는 컬럼인데, SQLite 는 FK 컬럼에 인덱스를 자동으로 만들지 않고, UNIQUE(member_id, movie_id) 인덱스는 member_id 가 앞이라 movie_id 만으로는 사용할 수 없다. [SQLite 전용] EXPLAIN QUERY PLAN. MySQL/PostgreSQL: EXPLAIN 생성 전: 리뷰 테이블 전체를 훑는다 (SCAN) — 78행을 모두 읽은 뒤 movie_id = 1 인 7행만 남긴다_
+_결과: results/Q17.txt · 실행 화면: results/screenshots/Q17.png · 실행 시간 비교: results/bench_index.txt 실행 시간 (scripts/bench_index.py, 5회 중앙값, SQLite 3.46.1): 시드 78행        영화 1편 조회 0.0239 → 0.0197 ms (1.2배, 측정 오차 수준) 리뷰 200,078행   영화 1편 조회 9.93 → 0.58 ms (17.0배) — 인덱스가 필요한 이유 전체 JOIN + GROUP BY 113.7 → 231.9 ms (0.5배, 오히려 느림) — 전부 읽을 때는 순차 스캔이 인덱스로 영화마다 찾아가는 것보다 싸다. 계획이 바뀐다고 항상 빨라지지는 않는다 적용 이유: review.movie_id 는 영화별 리뷰 조회·JOIN·GROUP BY(Q08~Q14)에 가장 자주 쓰이는 컬럼인데, SQLite 는 FK 컬럼에 인덱스를 자동으로 만들지 않고, UNIQUE(member_id, movie_id) 인덱스는 member_id 가 앞이라 movie_id 만으로는 사용할 수 없다. [SQLite 전용] EXPLAIN QUERY PLAN. MySQL/PostgreSQL: EXPLAIN 생성 전: 리뷰 테이블 전체를 훑는다 (SCAN) — 78행을 모두 읽은 뒤 movie_id = 1 인 7행만 남긴다_
 
 ```sql
 EXPLAIN QUERY PLAN
@@ -981,6 +1002,10 @@ FROM (
 
 `보너스: 정합성` · 원본: [`sql/05_bonus_integrity.sql`](../sql/05_bonus_integrity.sql)
 
+실행 화면 (sqlite3 CLI): [`screenshots/B07.png`](screenshots/B07.png)
+
+![B07 실행 화면](screenshots/B07.png)
+
 ```sql
 INSERT INTO review (member_id, movie_id, rating, content, created_at)
 VALUES (999, 1, 5, '없는 회원이 쓴 리뷰', '2024-10-01 10:00:00');
@@ -994,6 +1019,10 @@ Error (예상된 오류): FOREIGN KEY constraint failed
 
 `보너스: 정합성` · 원본: [`sql/05_bonus_integrity.sql`](../sql/05_bonus_integrity.sql)
 
+실행 화면 (sqlite3 CLI): [`screenshots/B08.png`](screenshots/B08.png)
+
+![B08 실행 화면](screenshots/B08.png)
+
 ```sql
 INSERT INTO movie (genre_id, title, release_date, running_time, country, director)
 VALUES (99, '장르가 없는 영화', '2024-10-01', 100, '한국', '미상');
@@ -1006,6 +1035,10 @@ Error (예상된 오류): FOREIGN KEY constraint failed
 ### B09 · FK 위반 ③ 영화가 남아 있는 장르(액션)를 DELETE → ON DELETE RESTRICT
 
 `보너스: 정합성` · 원본: [`sql/05_bonus_integrity.sql`](../sql/05_bonus_integrity.sql)
+
+실행 화면 (sqlite3 CLI): [`screenshots/B09.png`](screenshots/B09.png)
+
+![B09 실행 화면](screenshots/B09.png)
 
 ```sql
 DELETE FROM genre WHERE name = '액션';
@@ -1026,6 +1059,10 @@ DELETE FROM genre WHERE name = '뮤지컬';
 ### B10 · CHECK 위반: 별점 6점, 존재하지 않는 날짜, 허용되지 않는 회원 상태
 
 `보너스: 정합성` · 원본: [`sql/05_bonus_integrity.sql`](../sql/05_bonus_integrity.sql)
+
+실행 화면 (sqlite3 CLI): [`screenshots/B10.png`](screenshots/B10.png)
+
+![B10 실행 화면](screenshots/B10.png)
 
 ```sql
 INSERT INTO review (member_id, movie_id, rating, content, created_at)
@@ -1068,6 +1105,10 @@ Error (예상된 오류): CHECK constraint failed: status IN ('ACTIVE', 'DORMANT
 
 `보너스: 정합성` · 원본: [`sql/05_bonus_integrity.sql`](../sql/05_bonus_integrity.sql)
 
+실행 화면 (sqlite3 CLI): [`screenshots/B11.png`](screenshots/B11.png)
+
+![B11 실행 화면](screenshots/B11.png)
+
 ```sql
 INSERT INTO review (member_id, movie_id, rating, content, created_at)
 VALUES (1, 1, 3, '두 번째 리뷰', '2024-10-01 10:00:00');
@@ -1090,6 +1131,10 @@ Error (예상된 오류): UNIQUE constraint failed: member.email
 
 `보너스: 정합성` · 원본: [`sql/05_bonus_integrity.sql`](../sql/05_bonus_integrity.sql)
 
+실행 화면 (sqlite3 CLI): [`screenshots/B12.png`](screenshots/B12.png)
+
+![B12 실행 화면](screenshots/B12.png)
+
 ```sql
 INSERT INTO movie (genre_id, title, release_date, running_time, country, director)
 VALUES (2, NULL, '2024-10-01', 100, '한국', '미상');
@@ -1102,6 +1147,10 @@ Error (예상된 오류): NOT NULL constraint failed: movie.title
 ### B13 · FK 검사를 끄면? PRAGMA foreign_keys = OFF 상태에서는 고아 리뷰가 들어간다 [SQLite 전용]
 
 `보너스: 정합성` · 원본: [`sql/05_bonus_integrity.sql`](../sql/05_bonus_integrity.sql)
+
+실행 화면 (sqlite3 CLI): [`screenshots/B13.png`](screenshots/B13.png)
+
+![B13 실행 화면](screenshots/B13.png)
 
 ```sql
 PRAGMA foreign_keys = OFF;
@@ -1154,6 +1203,10 @@ PRAGMA foreign_key_check;
 ### B14 · 해결: 부모(회원)를 먼저 만들고 자식(리뷰)을 넣는다 — 한 트랜잭션으로 묶어서
 
 `보너스: 정합성` · 원본: [`sql/05_bonus_integrity.sql`](../sql/05_bonus_integrity.sql)
+
+실행 화면 (sqlite3 CLI): [`screenshots/B14.png`](screenshots/B14.png)
+
+![B14 실행 화면](screenshots/B14.png)
 
 ```sql
 BEGIN TRANSACTION;

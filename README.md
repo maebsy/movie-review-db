@@ -56,6 +56,20 @@ sqlite3 movie_review.db < sql/02_seed.sql
 sqlite3 -box movie_review.db < sql/03_queries.sql
 ```
 
+### 실행 순서와 다시 실행하기
+
+파일은 `01_schema.sql` → `02_seed.sql` → `03_queries.sql` 순서로 실행하며, 보너스는 이어서 `04`~`06` 파일을 실행합니다.
+`scripts/run_all.py` 는 빈 DB 에 `01`·`02` 를 실행하고, 쿼리 파일마다 새 DB 를 준비해 실행한 결과를 `results/` 에 기록합니다. `--check` 는 임시 DB 에서 실행한 결과와 기존 파일을 비교만 합니다.
+
+Q15·Q16 은 데이터를 바꾸고 Q17 은 인덱스를 만듭니다. sqlite3 CLI 로 다시 실행할 때는 `DROP TABLE` 로 초기화하는 `01_schema.sql` 부터 실행하세요.
+
+```bash
+D=$(mktemp -d)/t.db
+sqlite3 "$D" < sql/01_schema.sql
+sqlite3 "$D" < sql/02_seed.sql
+sqlite3 "$D" < sql/03_queries.sql
+```
+
 ## 제출물 구성
 
 | 제출물 | 파일 | 내용 |
@@ -64,8 +78,11 @@ sqlite3 -box movie_review.db < sql/03_queries.sql
 | 샘플 데이터 INSERT SQL | [`sql/02_seed.sql`](sql/02_seed.sql) | genre 10 · member 15 · movie 22 · review 78 행 (부모 → 자식 순서, 한 트랜잭션) |
 | 쿼리 15개 SQL | [`sql/03_queries.sql`](sql/03_queries.sql) | 필수 15개(Q01~Q11 · Q13 · Q15~Q17) + 추가 2개(Q12 · Q14), 쿼리마다 "무엇을 확인하는지" 한 줄 설명 |
 | 실행 결과 폴더 | [`results/`](results/README.md) | 쿼리별 텍스트 결과 + 전체 결과 표 모음 |
-| 실행 화면 스크린샷 | [`results/screenshots/`](results/screenshots/README.md) | Q01~Q17 전부 + 오류 재현 1개를 sqlite3 CLI 에서 실행한 화면 PNG (각 `results/Qnn.txt` 셋째 줄에 경로) |
+| 실행 화면 스크린샷 | [`results/screenshots/`](results/screenshots/README.md) | Q01~Q17 전부 + 무결성(FK · CHECK · UNIQUE · NOT NULL) 시나리오 B07~B14 + 오류 재현을 sqlite3 CLI 에서 실행한 화면 PNG (각 결과 파일 셋째 줄에 경로), 엑셀 사례 [`EXCEL.png`](results/screenshots/EXCEL.png) |
+| 인덱스 실행 시간 비교 | [`results/bench_index.txt`](results/bench_index.txt) | `scripts/bench_index.py` — 시드 78행과 리뷰 200,078행에서 인덱스 전/후 |
 | (선택) ERD | [`docs/erd.png`](docs/erd.png) | 원본: [`docs/erd.html`](docs/erd.html) |
+
+샘플은 [`sql/02_seed.sql`](sql/02_seed.sql) 에서 한 트랜잭션으로 로드하며 `scripts/run_all.py` 가 자동 실행합니다. 테이블별 행 수는 [`results/00_table_counts.txt`](results/00_table_counts.txt) 에 정리했습니다.
 
 ## 스키마
 
@@ -177,6 +194,8 @@ title        | avg_rating | review_count
 생성 전   `--SCAN review
 생성 후   `--SEARCH review USING INDEX idx_review_movie_id (movie_id=?)
 ```
+
+실행 시간 ([`results/bench_index.txt`](results/bench_index.txt), 5회 중앙값): 시드 78행에서는 1.2배로 측정 오차 수준이고, 리뷰 200,078행으로 늘리면 영화 1편 조회가 9.93 → 0.58 ms(**17.0배**)로 빨라집니다. 반면 전체 JOIN + GROUP BY 는 113.7 → 231.9 ms 로 오히려 느려집니다(전부 읽을 때는 순차 스캔이 더 쌈).
 
 DB 전용 문법(`PRAGMA`, `strftime`, `EXPLAIN QUERY PLAN`, `date()` CHECK)은 쿼리 옆에 `[SQLite 전용]` 주석과 MySQL/PostgreSQL 대응 문법을 적었습니다.
 

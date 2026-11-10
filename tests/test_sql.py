@@ -157,6 +157,16 @@ class QueryFileTest(unittest.TestCase):
                 head = (run_all.RESULTS_DIR / "{}.txt".format(block.qid)).read_text(encoding="utf-8").splitlines()[:3]
                 self.assertIn("screenshot: results/screenshots/{}.png (sqlite3 CLI 실행 화면)".format(block.qid), head)
 
+    def test_integrity_scenarios_have_screenshots(self):
+        """FK · CHECK · UNIQUE · NOT NULL 시나리오(B07~B14)도 실행 화면이 있고 결과 파일에서 연결된다 (FK 작동 증거)."""
+        _, blocks = run_all.parse_blocks(run_all.SQL_DIR / "05_bonus_integrity.sql")
+        self.assertEqual([b.qid for b in blocks], ["B{:02d}".format(i) for i in range(7, 15)])
+        for block in blocks:
+            with self.subTest(b=block.qid):
+                self.assertTrue((run_all.SCREENSHOT_DIR / "{}.png".format(block.qid)).is_file())
+                head = (run_all.RESULTS_DIR / "{}.txt".format(block.qid)).read_text(encoding="utf-8").splitlines()[:3]
+                self.assertIn("screenshot: results/screenshots/{}.png (sqlite3 CLI 실행 화면)".format(block.qid), head)
+
     def test_all_sql_files_execute_and_results_are_current(self):
         self.assertEqual(run_all.main(["--check"]), 0)
 

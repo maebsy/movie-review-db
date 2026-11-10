@@ -1,6 +1,6 @@
 # 실행 화면 스크린샷
 
-**Q01~Q17 전체 쿼리**를 sqlite3 CLI 에서 실제로 실행한 터미널 화면입니다(2차 동료 평가 후 9장 → 17장 + 오류 1장). 각 결과 파일(`../Qnn.txt`) 머리의 `screenshot:` 줄과 [`results/README.md`](../README.md) 의 쿼리별 절에서도 바로 연결됩니다. 텍스트 결과(`../Qnn.txt`)와 같은 쿼리를 같은 시드 데이터에서 실행했으므로, 각 행의 값은 텍스트 결과와 같습니다.
+**Q01~Q17 전체 쿼리**와 **무결성 시나리오 B07~B14** 를 sqlite3 CLI 에서 실제로 실행한 터미널 화면입니다(1차 9장 → 2차 Q01~Q17 · 오류 → 3차 B07~B14 · 엑셀 사례 추가). 각 결과 파일(`../Qnn.txt`) 머리의 `screenshot:` 줄과 [`results/README.md`](../README.md) 의 쿼리별 절에서도 바로 연결됩니다. 텍스트 결과(`../Qnn.txt`)와 같은 쿼리를 같은 시드 데이터에서 실행했으므로, 각 행의 값은 텍스트 결과와 같습니다.
 
 | 화면 | 분류 | 확인할 점 | 텍스트 결과 |
 | --- | --- | --- | --- |
@@ -11,7 +11,7 @@
 | [Q05.png](Q05.png) | 조인 (INNER) | 3개 테이블 조인 — 짝이 있는 리뷰만, 별점만 남긴 리뷰는 `(별점만 남김)` | [Q05.txt](../Q05.txt) |
 | [Q06.png](Q06.png) | 조인 (INNER) | 장르명과 영화 — 영화 없는 '뮤지컬' 은 빠짐 | [Q06.txt](../Q06.txt) |
 | [Q07.png](Q07.png) | 조인 (LEFT) | 리뷰가 없는 회원 3명 (`review_id IS NULL`) | [Q07.txt](../Q07.txt) |
-| [Q08.png](Q08.png) | 조인 (LEFT) | 영화별 리뷰 수, 리뷰 없는 2편은 0 | [Q08.txt](../Q08.txt) |
+| [Q08.png](Q08.png) | 조인 (LEFT) | 영화별 리뷰 수, 리뷰 없는 2편은 0 · LEFT JOIN 의 NULL 을 COALESCE 로 `리뷰 없음` · `-` 표시 | [Q08.txt](../Q08.txt) |
 | [Q09.png](Q09.png) | 집계 | `HAVING COUNT(*) >= 3` 평균 별점 TOP 5 | [Q09.txt](../Q09.txt) |
 | [Q10.png](Q10.png) | 집계 | 장르별 영화 수 · 리뷰 수 · 평균 (뮤지컬 0 · NULL) | [Q10.txt](../Q10.txt) |
 | [Q11.png](Q11.png) | 집계 | 회원별 리뷰 수 · 평균 · 총 관람 시간(`SUM`) | [Q11.txt](../Q11.txt) |
@@ -22,6 +22,26 @@
 | [Q16.png](Q16.png) | 삭제 (DELETE) | 탈퇴 회원 삭제 후 리뷰 78 → 76, 고아 리뷰 0 | [Q16.txt](../Q16.txt) |
 | [Q17.png](Q17.png) | 인덱스 | 생성 전 `SCAN review` · JOIN `USE TEMP B-TREE` → 생성 후 `SEARCH … USING INDEX` | [Q17.txt](../Q17.txt) |
 | [ERR.png](ERR.png) | 오류 재현 | FK 꺼짐/켬, RESTRICT, CHECK, UNIQUE, NOT NULL 오류 원문 | [docs/bonus.md](../../docs/bonus.md#실제로-겪은-오류-메시지-sqlite3-cli-원문) |
+
+## 무결성(FK · CHECK · UNIQUE · NOT NULL) 시나리오 — B07~B14
+
+스키마의 제약이 실제로 동작하는지 [`sql/05_bonus_integrity.sql`](../../sql/05_bonus_integrity.sql) 의 시도를 블록마다 새 시드 DB 에서 sqlite3 CLI 로 실행한 화면입니다(3차 동료 평가 "FK 작동을 입증하는 실행 검증 미제출" 반영). 각 `../Bnn.txt` 셋째 줄에도 화면 경로가 있습니다.
+
+| 화면 | 시나리오 | 실제 출력 | 텍스트 결과 |
+| --- | --- | --- | --- |
+| [B07.png](B07.png) | FK: 없는 회원(999)의 리뷰 INSERT | `Runtime error: FOREIGN KEY constraint failed (19)` | [B07.txt](../B07.txt) |
+| [B08.png](B08.png) | FK: 없는 장르(99)로 영화 INSERT | `FOREIGN KEY constraint failed` | [B08.txt](../B08.txt) |
+| [B09.png](B09.png) | ON DELETE RESTRICT: 영화 4편이 있는 '액션' 삭제 → 거부, 빈 '뮤지컬' → 삭제 | `FOREIGN KEY constraint failed` 후 다음 DELETE 는 성공 | [B09.txt](../B09.txt) |
+| [Q16.png](Q16.png) | ON DELETE CASCADE: 탈퇴 회원 삭제 → 리뷰 78 → 76, 고아 0 | `member_count 14 · review_count 76 · orphan_reviews 0` | [Q16.txt](../Q16.txt) |
+| [B10.png](B10.png) | CHECK: 별점 6 · 2024-02-30 · 2024-13-01 · 상태 BANNED | `CHECK constraint failed: …` 4번 | [B10.txt](../B10.txt) |
+| [B11.png](B11.png) | UNIQUE: 같은 회원·영화 두 번째 리뷰 · 중복 이메일 | `UNIQUE constraint failed: …` 2번 | [B11.txt](../B11.txt) |
+| [B12.png](B12.png) | NOT NULL: 제목 없는 영화 | `NOT NULL constraint failed: movie.title` | [B12.txt](../B12.txt) |
+| [B13.png](B13.png) | FK 검사를 끄면: 고아 리뷰 900 이 들어가고 `foreign_key_check` 가 찾아냄 → 삭제 후 0건 | `review \| 900 \| member \| 1` | [B13.txt](../B13.txt) |
+| [B14.png](B14.png) | 해결: 부모(회원 16) → 자식(리뷰), 한 트랜잭션 | 리뷰 1행 조회 성공 | [B14.txt](../B14.txt) |
+
+## 엑셀 한 시트 방식의 문제 — [EXCEL.png](EXCEL.png)
+
+같은 상황을 엑셀 호환 스프레드시트(LibreOffice Calc 24.2)에서 실제로 계산한 화면입니다. 리뷰 시트의 닉네임을 `VLOOKUP` 으로 회원 시트에서 가져오게 하고, 회원 시트에서 2번 행을 지우면 경고 없이 지워지고 리뷰 2 · 4 가 `#N/A` 가 됩니다. 별점 칸의 `다섯` · `6` 도 그대로 들어갑니다. 재현 파일과 재계산 결과(CSV): [`excel/`](excel/) (생성: `excel/make.py`, 컨테이너: `excel/Dockerfile`).
 
 ## 어떻게 찍었나
 

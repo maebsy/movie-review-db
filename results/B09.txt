@@ -1,5 +1,6 @@
 B09 [보너스: 정합성] FK 위반 ③ 영화가 남아 있는 장르(액션)를 DELETE → ON DELETE RESTRICT
 source: sql/05_bonus_integrity.sql
+screenshot: results/screenshots/B09.png (sqlite3 CLI 실행 화면)
 
 sqlite> DELETE FROM genre WHERE name = '액션';
 Error (예상된 오류): FOREIGN KEY constraint failed

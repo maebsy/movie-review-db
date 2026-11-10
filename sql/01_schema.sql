@@ -10,6 +10,8 @@
 --
 --   생성 순서: genre, member(부모) → movie(자식) → review(손자) — 자식의 FK 가 가리킬 부모를 먼저 만든다 (MySQL·PostgreSQL 은 필수, SQLite 는 CREATE 때 검사하지 않지만 같은 순서를 지킨다)
 --   DROP 순서는 그 반대 — 자식 행이 남아 있는 부모를 먼저 DROP 하면 FOREIGN KEY constraint failed 로 막힌다
+--   실행 체크리스트: ① PRAGMA foreign_keys = ON (연결마다) ② 01_schema → 02_seed → 03_queries 순서
+--                   ③ PRAGMA foreign_key_check 위반 0건 확인 (results/00_table_counts.txt) ④ 다시 실행할 때는 이 파일부터 (DROP 으로 초기화)
 --
 --   테이블 개요 (4개 · 시드 기준 행 수)
 --     테이블   PK                     FK                                     행    한 행의 의미
@@ -19,6 +21,8 @@
 --     review   review_id INTEGER       member_id → member, movie_id → movie   78    회원 한 명이 영화 한 편에 남긴 평가 하나
 --
 --   PK 를 INTEGER 대체키로 고른 이유: email · nickname 같은 자연키는 바뀔 수 있고(UNIQUE 로만 보장),
+--     예를 들어 email 을 PK 로 썼다면 리뷰 10개를 쓴 '스릴러킹'이 이메일을 바꿀 때 그 10행의 FK 도 함께 바꿔야 한다
+--     (ON UPDATE CASCADE 가 없으면 FK 위반으로 거부, 있으면 연쇄 갱신 비용).
 --     movie 의 자연키 (title, release_date) 는 문자열 두 개라 FK 로 들고 다니기 무겁다.
 --     INTEGER PRIMARY KEY 는 SQLite rowid 의 별칭이라 조회·조인이 가장 빠르고 값을 생략하면 자동으로 매겨진다.
 --
@@ -27,6 +31,15 @@
 --     review.member_id → member.member_id (1~15)  ON DELETE CASCADE   탈퇴(삭제) 회원의 리뷰도 함께 삭제 / ON UPDATE 미지정(NO ACTION)
 --     review.movie_id  → movie.movie_id   (1~22)  ON DELETE CASCADE   없어진 영화의 리뷰는 의미가 없음  / ON UPDATE 미지정(NO ACTION)
 --     (FK 가 아닌 도메인 제약: review.rating 은 CHECK 1~5 정수, member.status 는 3가지 값)
+--     도메인 예시: genre_id 1 → '액션' · 2 → '드라마', member_id 1 → '팝콘요정', movie_id 1 → '기생충' · 2 → '인터스텔라'
+--               → review_id 1 의 (member_id 1, movie_id 2) 는 "팝콘요정이 인터스텔라에 남긴 리뷰"
+--   FK 작동 검증 (sqlite3 실행 결과 · 화면) — results/ 아래
+--     없는 부모를 가리키는 INSERT 거부   B07.txt (회원 999) · B08.txt (장르 99)   screenshots/B07.png · B08.png
+--     ON DELETE RESTRICT                  B09.txt (영화 4편이 있는 '액션' 삭제 거부, 빈 '뮤지컬' 은 삭제)   screenshots/B09.png
+--     ON DELETE CASCADE                   Q16.txt (탈퇴 회원 삭제 → 리뷰 78 → 76, 고아 리뷰 0)          screenshots/Q16.png
+--     FK 검사 OFF 일 때와 비교            B13.txt (고아 리뷰가 들어가고 foreign_key_check 가 찾아냄)      screenshots/B13.png
+--     시드 직후 무결성                    00_table_counts.txt (PRAGMA foreign_key_check 위반 0건)
+--     sqlite3 대화형 오류 원문            screenshots/ERR.png, docs/bonus.md "실제로 겪은 오류 메시지"
 --
 --   왜 엑셀 한 시트가 아니라 DB 인가 (관계 표현 · 무결성)
 --     엑셀은 시트 사이를 VLOOKUP 으로 이어도 원본 행을 지우면 #N/A 가 될 뿐 지우는 것을 막지 못하고,
@@ -34,6 +47,10 @@
 --     FOREIGN KEY constraint failed, 별점 6 이 CHECK constraint failed, 같은 회원·영화의 두 번째 리뷰가
 --     UNIQUE constraint failed 로 거부된다 (sqlite3 원문: docs/bonus.md · results/screenshots/ERR.png).
 --     정보는 한 테이블에 한 번만 두고 키로 연결하므로, 회원 이메일을 바꿔도 member 1행만 고치면 된다.
+--     엑셀 호환 스프레드시트(LibreOffice Calc)로 같은 상황을 실제로 계산한 화면: results/screenshots/EXCEL.png
+--
+--   정규화의 대가: 조회할 때 JOIN 이 늘고(Q05 는 3개 테이블), 영화별 평균처럼 매번 집계해야 하며, FK 컬럼에 인덱스가 필요하다(Q17).
+--     대신 쓰기는 한 곳만 고치면 된다. 78행 규모에서는 차이가 없고, 커지면 인덱스 → 집계 캐시(반정규화) 순으로 대응 (docs/design.md 2절)
 --
 --   컬럼 타입 요약 (자세한 근거: docs/design.md 4절)
 --     *_id                 INTEGER   대체키 · FK. 시드 최대 78, 최대 2^63-1
@@ -41,7 +58,8 @@
 --     running_time         INTEGER   분 단위, 합계·비교가 필요해 숫자 (시드 94~181분)
 --     birth_year           INTEGER   연도만 (개인정보 최소화), CHECK 1900~2026
 --     *_date, joined_at    TEXT      SQLite 에 DATE 가 없어 ISO-8601 'YYYY-MM-DD' + 실제 날짜 CHECK (사전순 = 날짜순)
---     created_at           TEXT      'YYYY-MM-DD HH:MM:SS' (같은 날 여러 리뷰의 순서)
+--     created_at           TEXT      'YYYY-MM-DD HH:MM:SS' (같은 날 여러 리뷰의 순서). 시간대 없이 KST 로 저장 —
+--                                    SQLite datetime('now') 는 UTC 이므로, 여러 시간대 서비스라면 UTC ISO-8601('…Z') 또는 epoch INTEGER 로 저장
 --     name, title, email…  TEXT      길이 제한 없는 문자열 (MySQL 이라면 VARCHAR(n))
 --     status               TEXT      3가지 값만 CHECK (값이 늘면 별도 테이블로 분리)
 -- =============================================================================
@@ -58,6 +76,8 @@ DROP TABLE IF EXISTS genre;
 --   ① CHECK (date(x) = x)            '2024-13-01' 이 통과 → 아래 'IS' 설명. 테스트를 쓰다 발견
 --   ② CHECK (date(x) IS x)           3.45 에서는 해결, 그러나 CI 의 SQLite 3.40.1 에서 '2024-02-30' 이 통과 (커밋 cf86c1e, 10-12 14:41)
 --   ③ CHECK (date(x, '+0 days') IS x) 버전과 상관없이 거부 → 최종 선택 (커밋 d5a1e43, 10-12 23:27 · 테스트로 고정)
+--   변경 이력 추적: git show cf86c1ea091e422d334a23a45645ef879ad9bce2  (2026-10-12 14:41 +0900, = → IS)
+--                  git show d5a1e43b441443bc038386c674ad0d5360820b47  (2026-10-12 23:27 +0900, '+0 days' 수식어, CI Windows · Python 3.10 에서 발견)
 --   검토만 하고 쓰지 않은 대안: 트리거로 검증(미션이 트리거 금지) · 앱에서 검증(DB 규칙이 아니게 되어 다른 도구로 넣으면 뚫림)
 --                              · 연·월·일을 정수 컬럼 3개로 분리(날짜 함수·정렬이 불편해짐)
 --

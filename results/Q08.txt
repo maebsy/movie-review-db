@@ -33,3 +33,19 @@ title                    | review_count
 7번방의 선물             |            0
 반지의 제왕: 반지 원정대 |            0
 (22 rows)
+
+-- LEFT JOIN 이 만든 NULL 처리: 리뷰가 없는 영화는 리뷰 쪽 컬럼이 전부 NULL → COALESCE(값, 대체값) 로 화면용 값으로 바꾼다
+sqlite> SELECT m.title,
+   ...>        COUNT(r.review_id)                          AS review_count,
+   ...>        COALESCE(ROUND(AVG(r.rating), 2), '리뷰 없음') AS avg_rating,
+   ...>        COALESCE(MAX(r.created_at), '-')             AS last_review_at
+   ...> FROM movie AS m
+   ...> LEFT JOIN review AS r ON r.movie_id = m.movie_id
+   ...> GROUP BY m.movie_id, m.title
+   ...> HAVING COUNT(r.review_id) = 0
+   ...> ORDER BY m.title;
+title                    | review_count | avg_rating | last_review_at
+-------------------------+--------------+------------+---------------
+7번방의 선물             |            0 | 리뷰 없음  | -
+반지의 제왕: 반지 원정대 |            0 | 리뷰 없음  | -
+(2 rows)

@@ -1,5 +1,6 @@
 B13 [보너스: 정합성] FK 검사를 끄면? PRAGMA foreign_keys = OFF 상태에서는 고아 리뷰가 들어간다 [SQLite 전용]
 source: sql/05_bonus_integrity.sql
+screenshot: results/screenshots/B13.png (sqlite3 CLI 실행 화면)
 
 sqlite> PRAGMA foreign_keys = OFF;
 OK

@@ -1,5 +1,6 @@
 B12 [보너스: 정합성] NOT NULL 위반: 제목 없는 영화
 source: sql/05_bonus_integrity.sql
+screenshot: results/screenshots/B12.png (sqlite3 CLI 실행 화면)
 
 sqlite> INSERT INTO movie (genre_id, title, release_date, running_time, country, director)
    ...> VALUES (2, NULL, '2024-10-01', 100, '한국', '미상');
