@@ -1,10 +1,10 @@
 # movie-review-db
 
-> Relational database for a movie rating service with members, movies, genres, and reviews, including schema design, sample data, and 15 SQL queries covering joins, aggregation, subqueries, and indexing
-> 회원, 영화, 장르, 리뷰를 다루는 영화 평점 서비스 DB로 스키마 설계, 샘플 데이터, 조인·집계·서브쿼리·인덱스를 포함한 SQL 쿼리 15개를 정리한 프로젝트
+> Relational database for a movie rating service with members, movies, genres, and reviews, including schema design, sample data, and 15 required + 2 extra SQL queries covering joins, aggregation, subqueries, and indexing
+> 회원, 영화, 장르, 리뷰를 다루는 영화 평점 서비스 DB로 스키마 설계, 샘플 데이터, 조인·집계·서브쿼리·인덱스를 포함한 SQL 쿼리 필수 15 + 추가 2개를 정리한 프로젝트
 
 ![SQLite](https://img.shields.io/badge/SQLite-3.25%2B-003B57?logo=sqlite&logoColor=white)
-![SQL](https://img.shields.io/badge/queries-17%20%2B%20bonus%2017-informational)
+![SQL](https://img.shields.io/badge/queries-15%20%2B%202%20extra%20%2B%20bonus%2017-informational)
 ![CI](https://github.com/maebsy/movie-review-db/actions/workflows/sql.yml/badge.svg)
 
 백엔드 프레임워크 없이 **데이터 모델링 → 데이터 입력 → 요구사항을 SQL 로 해결** 하는 전체 흐름을 SQLite 로 구현했습니다.
@@ -17,6 +17,7 @@
 - [빠른 시작](#빠른-시작)
 - [제출물 구성](#제출물-구성)
 - [스키마](#스키마)
+  - [DB 와 엑셀 비교](#db-와-엑셀-비교)
 - [쿼리 목록](#쿼리-목록)
 - [요구사항 구현 매핑](#요구사항-구현-매핑)
 - [선택(보너스) 과제 구현 내역](#선택보너스-과제-구현-내역)
@@ -61,8 +62,9 @@ sqlite3 -box movie_review.db < sql/03_queries.sql
 | --- | --- | --- |
 | 스키마 생성 SQL | [`sql/01_schema.sql`](sql/01_schema.sql) | 4개 테이블, PK · FK 3개 · NOT NULL · UNIQUE · CHECK, 실행 순서대로 정리 |
 | 샘플 데이터 INSERT SQL | [`sql/02_seed.sql`](sql/02_seed.sql) | genre 10 · member 15 · movie 22 · review 78 행 (부모 → 자식 순서, 한 트랜잭션) |
-| 쿼리 15개 SQL | [`sql/03_queries.sql`](sql/03_queries.sql) | 17개, 쿼리마다 "무엇을 확인하는지" 한 줄 설명 |
+| 쿼리 15개 SQL | [`sql/03_queries.sql`](sql/03_queries.sql) | 필수 15개(Q01~Q11 · Q13 · Q15~Q17) + 추가 2개(Q12 · Q14), 쿼리마다 "무엇을 확인하는지" 한 줄 설명 |
 | 실행 결과 폴더 | [`results/`](results/README.md) | 쿼리별 텍스트 결과 + 전체 결과 표 모음 |
+| 실행 화면 스크린샷 | [`results/screenshots/`](results/screenshots/README.md) | 주요 쿼리 9개 + 오류 재현 1개를 sqlite3 CLI 에서 실행한 화면 PNG |
 | (선택) ERD | [`docs/erd.png`](docs/erd.png) | 원본: [`docs/erd.html`](docs/erd.html) |
 
 ## 스키마
@@ -114,29 +116,45 @@ erDiagram
 | 날짜 | SQLite 에는 DATE 타입이 없어 ISO-8601 `TEXT` + `CHECK (date(x, '+0 days') IS x)` 로 실제 날짜만 허용 |
 | 인덱스 | `review(movie_id)` — 영화별 조회·집계에 가장 많이 쓰이고, FK 컬럼은 자동 인덱스가 없음 |
 
+`review.content` 가 NULL 인 4개는 의도한 **별점만 남긴 리뷰**이며, Q05 에서 `COALESCE` 로 `'(별점만 남김)'` 을 표시합니다.
+
 설계 이유는 [`docs/design.md`](docs/design.md) 에 자세히 정리했습니다.
+
+### DB 와 엑셀 비교
+
+| 비교 | 엑셀 | 관계형 DB |
+| --- | --- | --- |
+| 시작·편집 | 바로 편집하고 차트를 만들기 쉬움, 학습 비용 낮음 | 설계·SQL 학습 비용이 듦 |
+| 관계·규칙 | 표 사이 관계·참조 규칙 강제에 한계 | PK/FK · 제약조건으로 관계·규칙 강제 |
+| 중복·조회 | 같은 정보가 반복되기 쉬움 | 테이블 분리로 중복 감소, JOIN·집계로 조회 |
+| 동시 편집 | 여러 사람이 편집할 때 충돌·규칙 관리가 어려움 | 트랜잭션으로 변경의 일관성 관리 |
+| 구조 변경 | 셀·열을 바로 바꾸기 쉬움 | 스키마 변경·기존 데이터 이관 비용이 듦 |
+
+자세한 비교는 [체크리스트 3-1](docs/checklist.md#3-1-데이터베이스가-엑셀과-무엇이-다른지-왜-테이블을-나눠서-저장하는지-비교하여-설명할-수-있는가-) 에 정리했습니다.
 
 ## 쿼리 목록
 
-| ID | 분류 | 내용 | 결과 |
-| --- | --- | --- | --- |
-| Q01 | 기본 조회 | 2020년 이후 개봉작을 최신 개봉순으로 | [Q01](results/Q01.txt) |
-| Q02 | 기본 조회 | 별점 5점 리뷰 중 최근 5개 (`LIMIT`) | [Q02](results/Q02.txt) |
-| Q03 | 기본 조회 | 러닝타임 150분 이상 영화 | [Q03](results/Q03.txt) |
-| Q04 | 기본 조회 | 제목에 '의' 가 들어간 영화 (`LIKE`) | [Q04](results/Q04.txt) |
-| Q05 | 조인 (INNER) | 최근 리뷰 10개 + 회원 닉네임 + 영화 제목 (3개 테이블) | [Q05](results/Q05.txt) |
-| Q06 | 조인 (INNER) | 장르 이름과 함께 영화 목록 | [Q06](results/Q06.txt) |
-| Q07 | 조인 (LEFT) | 리뷰를 한 번도 쓰지 않은 회원 | [Q07](results/Q07.txt) |
-| Q08 | 조인 (LEFT) | 영화별 리뷰 수 (리뷰 없는 영화는 0) | [Q08](results/Q08.txt) |
-| Q09 | 집계 (랭킹) | 평균 별점 TOP 5 (리뷰 3개 이상, `HAVING`) | [Q09](results/Q09.txt) |
-| Q10 | 집계 | 장르별 영화 수 · 리뷰 수 · 평균 별점 | [Q10](results/Q10.txt) |
-| Q11 | 집계 | 회원별 리뷰 수 · 평균 준 별점 · 총 관람 시간(`SUM`) | [Q11](results/Q11.txt) |
-| Q12 | 집계 | 월별 리뷰 수와 평균 별점 추이 | [Q12](results/Q12.txt) |
-| Q13 | 서브쿼리 | 전체 평균보다 평균 별점이 높은 영화 | [Q13](results/Q13.txt) |
-| Q14 | 서브쿼리 (상관) | 장르마다 평균 별점 1위 영화 (CTE + 상관 서브쿼리) | [Q14](results/Q14.txt) |
-| Q15 | 수정 (UPDATE) | 6월 이후 리뷰가 없는 ACTIVE 회원을 휴면 전환 | [Q15](results/Q15.txt) |
-| Q16 | 삭제 (DELETE) | 탈퇴 회원 삭제 → 리뷰 CASCADE 삭제 확인 | [Q16](results/Q16.txt) |
-| Q17 | 인덱스 | `CREATE INDEX idx_review_movie_id` + 생성 전/후 실행 계획 | [Q17](results/Q17.txt) |
+| ID | 구분 | 분류 | 내용 | 결과 |
+| --- | --- | --- | --- | --- |
+| Q01 | 필수 | 기본 조회 | 2020년 이후 개봉작을 최신 개봉순으로 | [Q01](results/Q01.txt) |
+| Q02 | 필수 | 기본 조회 | 별점 5점 리뷰 중 최근 5개 (`LIMIT`) | [Q02](results/Q02.txt) |
+| Q03 | 필수 | 기본 조회 | 러닝타임 150분 이상 영화 | [Q03](results/Q03.txt) |
+| Q04 | 필수 | 기본 조회 | 제목에 '의' 가 들어간 영화 (`LIKE`) | [Q04](results/Q04.txt) |
+| Q05 | 필수 | 조인 (INNER) | 최근 리뷰 10개 + 회원 닉네임 + 영화 제목 (3개 테이블) | [Q05](results/Q05.txt) |
+| Q06 | 필수 | 조인 (INNER) | 장르 이름과 함께 영화 목록 | [Q06](results/Q06.txt) |
+| Q07 | 필수 | 조인 (LEFT) | 리뷰를 한 번도 쓰지 않은 회원 | [Q07](results/Q07.txt) |
+| Q08 | 필수 | 조인 (LEFT) | 영화별 리뷰 수 (리뷰 없는 영화는 0) | [Q08](results/Q08.txt) |
+| Q09 | 필수 | 집계 (랭킹) | 평균 별점 TOP 5 (리뷰 3개 이상, `HAVING`) | [Q09](results/Q09.txt) |
+| Q10 | 필수 | 집계 | 장르별 영화 수 · 리뷰 수 · 평균 별점 | [Q10](results/Q10.txt) |
+| Q11 | 필수 | 집계 | 회원별 리뷰 수 · 평균 준 별점 · 총 관람 시간(`SUM`) | [Q11](results/Q11.txt) |
+| Q12 | 추가 | 집계 | 월별 리뷰 수와 평균 별점 추이 (시간 축 집계 · `strftime` 예시) | [Q12](results/Q12.txt) |
+| Q13 | 필수 | 서브쿼리 | 전체 평균보다 평균 별점이 높은 영화 | [Q13](results/Q13.txt) |
+| Q14 | 추가 | 서브쿼리 (상관) | 장르마다 평균 별점 1위 영화 (CTE + 상관 서브쿼리, 회고 4-1의 가장 복잡한 쿼리) | [Q14](results/Q14.txt) |
+| Q15 | 필수 | 수정 (UPDATE) | 6월 이후 리뷰가 없는 ACTIVE 회원을 휴면 전환 | [Q15](results/Q15.txt) |
+| Q16 | 필수 | 삭제 (DELETE) | 탈퇴 회원 삭제 → 리뷰 CASCADE 삭제 확인 | [Q16](results/Q16.txt) |
+| Q17 | 필수 | 인덱스 | `CREATE INDEX idx_review_movie_id` + 생성 전/후 실행 계획 | [Q17](results/Q17.txt) |
+
+과제가 요구한 범주별 개수(기본 4 · 조인 4 · 집계 3 · 서브쿼리 1 · 수정/삭제 2 · 인덱스 1)는 **필수 15개**가 정확히 채웁니다. **추가 2개**(Q12, Q14)는 시간 축 집계와 "그룹별 최댓값을 가진 행" 문제를 연습하려고 더 작성했고, SQL 마커의 분류에 `추가` 를 붙여 구분합니다. 이 구분은 `test_required_fifteen_match_categories` 가 검사합니다. 주요 쿼리의 실제 실행 화면은 [`results/screenshots/`](results/screenshots/README.md) 에 있습니다.
 
 결과 예시 ([`results/Q09.txt`](results/Q09.txt))
 
@@ -168,14 +186,14 @@ DB 전용 문법(`PRAGMA`, `strftime`, `EXPLAIN QUERY PLAN`, `date()` CHECK)은 
 | FK 1:N 2개 이상, 없는 값 참조 차단 | FK 3개 + `PRAGMA foreign_keys = ON` | `test_foreign_keys_block_missing_parent` |
 | NOT NULL 1개 이상, UNIQUE 1개 이상 | NOT NULL 다수, UNIQUE 5개 | `test_not_null_and_unique_constraints_exist` |
 | 테이블당 10행 이상, 관계가 실제로 연결된 데이터 | 10 / 15 / 22 / 78행, FK 위반 0건 | `test_every_table_has_at_least_ten_rows` |
-| 기본 4 · 조인 4(INNER 2, LEFT 1) · 집계 3 · 서브쿼리 1 · 수정/삭제 2 · 인덱스 1 | 4 · 4(INNER 2, LEFT 2) · 4 · 2 · 2 · 1 = 17개 | `test_category_minimums` |
+| 기본 4 · 조인 4(INNER 2, LEFT 1) · 집계 3 · 서브쿼리 1 · 수정/삭제 2 · 인덱스 1 | 4 · 4 · 3+1 · 1+1 · 2 · 1 = 필수 15 + 추가 2 | `test_category_minimums` · `test_required_fifteen_match_categories` |
 | 쿼리마다 한 줄 설명 + 실행 결과 | `-- @Qnn \| 분류 \| 설명` + `results/` | `run_all.py --check` |
 | 인덱스 적용 이유 1줄 | Q17 주석 + 실행 계획 비교 | |
 | DB 전용 문법 주석 | `[SQLite 전용]` 표기 | |
 | View · 프로시저 · 트리거 미사용 | CTE(`WITH`)만 사용 | |
 
 ```bash
-python -m unittest discover -s tests -t . -v   # 스키마 · 제약조건 · 쿼리 구성 검사 (12개)
+python -m unittest discover -s tests -t . -v   # 스키마 · 제약조건 · 쿼리 구성 검사 (13개)
 python scripts/run_all.py --check              # results/ 가 SQL 실행 결과와 일치하는지
 ```
 
@@ -203,6 +221,8 @@ sqlite> INSERT INTO review (member_id, movie_id, …) VALUES (1, 1, …);   -- �
 Error (예상된 오류): UNIQUE constraint failed: review.member_id, review.movie_id
 ```
 
+위 두 줄은 `run_all.py` 가 기록한 결과입니다. sqlite3 CLI 에서 직접 재현한 오류 원문(FK 꺼짐/켬, RESTRICT, CHECK, UNIQUE, NOT NULL)은 [`docs/bonus.md` 의 실제 오류 메시지](docs/bonus.md#실제로-겪은-오류-메시지-sqlite3-cli-원문) 와 [스크린샷](results/screenshots/ERR.png) 에 있습니다.
+
 ## 프로젝트 구조
 
 ```
@@ -210,11 +230,12 @@ movie-review-db/
 ├── sql/
 │   ├── 01_schema.sql                  # 스키마 생성
 │   ├── 02_seed.sql                    # 샘플 데이터
-│   ├── 03_queries.sql                 # 핵심 쿼리 17개
+│   ├── 03_queries.sql                 # 핵심 쿼리 필수 15 + 추가 2
 │   ├── 04_bonus_join_vs_subquery.sql  # [보너스] JOIN vs 서브쿼리
 │   ├── 05_bonus_integrity.sql         # [보너스] 정합성 깨뜨려 보기
 │   └── 06_bonus_mini_report.sql       # [보너스] 미니 리포트
 ├── results/                           # 실행 결과 (Qnn · Bnn · Rnn .txt + README.md 모음)
+│   └── screenshots/                   # sqlite3 CLI 실행 화면 PNG (색인: README.md)
 ├── scripts/run_all.py                 # DB 생성 + 전체 실행 + 결과 기록 / --check 검증
 ├── tests/test_sql.py                  # 요구사항 자동 검증
 └── docs/

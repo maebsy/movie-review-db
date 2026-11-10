@@ -14,4 +14,4 @@ sqlite> PRAGMA foreign_key_check;
 sqlite> PRAGMA foreign_keys;
 1
 
-SQLite 3.45.1
+SQLite 3.46.1

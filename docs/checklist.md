@@ -55,22 +55,23 @@ SQLite 는 FK 검사가 기본으로 꺼져 있어서 모든 SQL 파일 첫 줄�
 
 ### 1-4. 기본 조회(4)·조인(4)·집계(3)·서브쿼리(1)·수정/삭제(2)·인덱스(1)를 포함한 쿼리 15개가 작성되어 있는가 ✅
 
-- 📂 [`sql/03_queries.sql`](../sql/03_queries.sql) — 17개 · 🧪 `test_category_minimums` (SQL 문을 분석해 범주별 개수와 키워드를 검사)
+- 📂 [`sql/03_queries.sql`](../sql/03_queries.sql) — 필수 15 + 추가 2 · 🧪 `test_category_minimums` · `test_required_fifteen_match_categories` (SQL 문을 분석해 범주별 개수와 키워드를 검사)
 
-| 분류 | 요구 | 작성 | 쿼리 |
-| --- | ---: | ---: | --- |
-| 기본 조회 (WHERE, ORDER BY, LIMIT) | 4 | 4 | Q01 최근 개봉작 · Q02 최근 5점 리뷰 5개(LIMIT) · Q03 긴 영화 · Q04 제목 LIKE 검색 |
-| 조인 (INNER 2+, LEFT 1+) | 4 | 4 | Q05 최근 리뷰 + 닉네임 + 제목(INNER 3테이블) · Q06 장르명과 영화(INNER) · Q07 리뷰 안 쓴 회원(LEFT) · Q08 영화별 리뷰 수 0 포함(LEFT) |
-| 집계 (COUNT, SUM, AVG + GROUP BY) | 3 | 4 | Q09 평균 별점 TOP 5(HAVING) · Q10 장르별 통계 · Q11 회원별 활동(SUM 포함) · Q12 월별 추이 |
-| 서브쿼리 | 1 | 2 | Q13 전체 평균보다 높은 영화(스칼라) · Q14 장르별 1위(상관 서브쿼리 + CTE) |
-| 수정 / 삭제 | 2 | 2 | Q15 휴면 전환 UPDATE · Q16 탈퇴 회원 DELETE(+ CASCADE) |
-| 인덱스 | 1 | 1 | Q17 `idx_review_movie_id` + 생성 전/후 실행 계획 |
+| 분류 | 요구 | 필수 | 추가 | 쿼리 |
+| --- | ---: | ---: | ---: | --- |
+| 기본 조회 (WHERE, ORDER BY, LIMIT) | 4 | 4 | 0 | Q01 최근 개봉작 · Q02 최근 5점 리뷰 5개(LIMIT) · Q03 긴 영화 · Q04 제목 LIKE 검색 |
+| 조인 (INNER 2+, LEFT 1+) | 4 | 4 | 0 | Q05 최근 리뷰 + 닉네임 + 제목(INNER 3테이블) · Q06 장르명과 영화(INNER) · Q07 리뷰 안 쓴 회원(LEFT) · Q08 영화별 리뷰 수 0 포함(LEFT) |
+| 집계 (COUNT, SUM, AVG + GROUP BY) | 3 | 3 | 1 | Q09 평균 별점 TOP 5(HAVING) · Q10 장르별 통계 · Q11 회원별 활동(SUM 포함) · 추가 Q12 월별 추이(시간 축 집계·SQLite `strftime` 예시) |
+| 서브쿼리 | 1 | 1 | 1 | Q13 전체 평균보다 높은 영화(스칼라) · 추가 Q14 장르별 1위(CTE + 상관 서브쿼리, 회고 4-1의 가장 복잡한 쿼리) |
+| 수정 / 삭제 | 2 | 2 | 0 | Q15 휴면 전환 UPDATE · Q16 탈퇴 회원 DELETE(+ CASCADE) |
+| 인덱스 | 1 | 1 | 0 | Q17 `idx_review_movie_id` + 생성 전/후 실행 계획 |
 
 모든 쿼리 위에 `-- @Qnn | 분류 | 무엇을 확인하는 쿼리인지` 한 줄 설명이 있습니다.
 
 ### 1-5. 각 쿼리의 실행 결과가 스크린샷 또는 텍스트로 첨부되어 있는가 ✅
 
 - 📄 [`results/`](../results) — 쿼리별 텍스트 결과(`Q01.txt` ~ `Q17.txt`, 보너스 `B01~B14`, `R01~R03`) + 전체를 표로 모은 [`results/README.md`](../results/README.md)
+- 📄 [`results/screenshots/`](../results/screenshots/README.md) — 주요 쿼리를 실행한 sqlite3 CLI 터미널 화면 PNG
 - ▶️ `python scripts/run_all.py --check` — SQL 을 다시 실행해 결과 파일과 일치하는지 검사 (GitHub Actions 에서 push 마다 실행)
 
 결과 파일은 손으로 붙여넣지 않고 스크립트가 실제 실행 결과를 sqlite3 CLI 형식으로 기록합니다. 그래서 SQL 을 고치고 결과를 갱신하지 않으면 CI 가 실패합니다.
@@ -161,6 +162,9 @@ MySQL/PostgreSQL 이라면 날짜는 `DATE`/`DATETIME`, 문자열은 `VARCHAR(n)
 - **PK(기본키)**: 테이블 안에서 행 하나를 **유일하게 식별**하는 값. NULL·중복 불가. 예: `movie.movie_id = 1` 은 기생충 하나만 가리킵니다.
 - **FK(외래키)**: 다른 테이블의 PK 를 **가리키는** 값. 가리키는 행이 실제로 있어야 합니다. 예: `review.movie_id = 1` 은 "이 리뷰는 기생충의 리뷰" 라는 뜻이고, `movie_id = 999` 처럼 없는 영화를 가리키면 거부됩니다.
 
+PK 는 학번처럼 한 명을 정확히 가리키고, FK 는 수강신청서에 적힌 학번처럼 다른 표의 행을 가리킵니다.
+실제 리뷰 40번의 `movie_id = 1` 은 “기생충의 리뷰”라는 뜻이며, 영화 제목을 리뷰마다 다시 저장하지 않아도 됩니다.
+
 ```
 movie                          review
 movie_id(PK) | title           review_id(PK) | member_id(FK) | movie_id(FK) | rating
@@ -177,6 +181,18 @@ movie_id(PK) | title           review_id(PK) | member_id(FK) | movie_id(FK) | ra
 ### 3-3. INNER JOIN 과 LEFT JOIN 의 차이를 실행 결과를 보며 짚어줄 수 있는가 ✅
 
 - 📄 [`Q05`](../results/Q05.txt)(INNER), [`Q07`](../results/Q07.txt)·[`Q08`](../results/Q08.txt)·[`Q10`](../results/Q10.txt)(LEFT)
+
+대비표 (Q05 · Q07)
+
+| 비교 | INNER JOIN (Q05) | LEFT JOIN (Q07) |
+| --- | --- | --- |
+| 남는 행 | 회원·리뷰·영화에 짝이 있는 리뷰 | 왼쪽 회원을 모두 남긴 뒤, Q07 은 리뷰 없는 회원만 선택 |
+| 짝 없는 행 처리 | 제외 | 오른쪽 리뷰 컬럼을 NULL 로 채움 |
+| 결과 행 수 | 회원×리뷰 조인 78행 → Q05 `LIMIT 10` 후 10행 | 회원×리뷰 조인 81행 → Q07 `WHERE r.review_id IS NULL` 후 3행 |
+| 오른쪽 컬럼 NULL | 짝이 없어 생기는 NULL 은 없음 (`content` 자체는 NULL 가능, Q05 는 `COALESCE` 로 표시) | 리뷰 없는 3명은 `r.review_id` 등 리뷰 컬럼이 NULL |
+| 언제 쓰나 | 작성된 리뷰에 회원·영화 정보를 붙일 때 | 리뷰 없는 회원(눈팅족·새내기·잠수중)을 찾을 때 |
+
+**한 문장 요약: INNER JOIN 은 짝이 있는 행만, LEFT JOIN 은 짝이 없는 왼쪽 행까지 NULL 로 채워 남깁니다.**
 
 - **INNER JOIN**: 양쪽에 **짝이 있는 행만** 남깁니다. 회원 × 리뷰를 INNER JOIN 하면 78행 — 리뷰를 쓴 12명만 나옵니다.
 - **LEFT JOIN**: 왼쪽 테이블의 행은 **짝이 없어도 모두 남기고**, 오른쪽 컬럼을 NULL 로 채웁니다. 회원 LEFT JOIN 리뷰는 81행 — 리뷰가 없는 3명(새내기, 잠수중, 눈팅족)이 `review_id = NULL` 로 추가됩니다.
@@ -210,6 +226,13 @@ Q09 를 기생충으로 따라가 보면:
 | `COUNT(*)` / `COUNT(col)` | 행 수 / NULL 이 아닌 값의 수 | 스릴러킹 리뷰 10개 (Q11) |
 | `SUM(col)` | 합계 | 스릴러킹 총 관람 1,283분 (Q11) |
 | `AVG(col)` | 평균 (NULL 제외) | 드라마 평균 4.73, 뮤지컬은 리뷰가 없어 NULL (Q10) |
+
+| 특이 케이스 | 임시 DB 실행 결과 |
+| --- | --- |
+| NULL 과 COUNT | 전체 리뷰 `COUNT(*) = 78`, `COUNT(content) = 74` — 내용 NULL 4개는 제외 |
+| NULL 과 AVG | `AVG` 는 NULL 을 무시하며, 리뷰 없는 뮤지컬 장르는 `AVG(r.rating) = NULL` |
+| 정수 나눗셈 | 기생충 `SUM(rating) = 33`, `COUNT(*) = 7`: `SUM(rating)/COUNT(*) = 4`, `AVG(rating) = 4.71428571428571` |
+| NULL 그룹 키 | `WHERE content IS NULL GROUP BY content` 는 NULL 을 한 그룹(4행)으로 묶음 |
 
 `WHERE` 는 묶기 **전** 행을, `HAVING` 은 묶은 **후** 그룹을 거릅니다. "리뷰 3개 이상인 영화" 는 묶어 봐야 알 수 있으므로 `HAVING` 입니다.
 

@@ -1,5 +1,5 @@
 -- =============================================================================
--- 01_schema.sql — 영화 평점 서비스 스키마 (SQLite 3.25+)
+-- 01_schema.sql — 영화 평점 서비스 스키마 v1.0 (SQLite 3.25+) · 실행 순서 1/3: 01_schema → 02_seed → 03_queries
 --
 --   genre (1) ──< movie (1) ──< review >── (1) member
 --
@@ -8,8 +8,8 @@
 --     member.member_id → review.member_id  한 회원이 여러 리뷰
 --     movie.movie_id   → review.movie_id   한 영화에 여러 리뷰
 --
---   실행 순서: 부모 테이블(genre, member) → 자식 테이블(movie) → 손자 테이블(review)
---   삭제 순서는 그 반대 (자식이 부모를 참조하므로)
+--   생성 순서: genre, member(부모) → movie(자식) → review(손자) — 자식의 FK 가 가리킬 부모를 먼저 만든다 (MySQL·PostgreSQL 은 필수, SQLite 는 CREATE 때 검사하지 않지만 같은 순서를 지킨다)
+--   DROP 순서는 그 반대 — 자식 행이 남아 있는 부모를 먼저 DROP 하면 FOREIGN KEY constraint failed 로 막힌다
 -- =============================================================================
 
 -- [SQLite 전용] SQLite 는 FK 검사가 기본으로 꺼져 있다. 연결(세션)마다 켜야 한다.
@@ -61,8 +61,8 @@ CREATE TABLE member (
 CREATE TABLE movie (
     movie_id      INTEGER PRIMARY KEY,
     genre_id      INTEGER NOT NULL
-                  REFERENCES genre (genre_id)
-                  ON UPDATE CASCADE
+                  REFERENCES genre (genre_id)         -- FK movie → genre: NULL 불가, 삭제 RESTRICT · 수정 CASCADE
+                  ON UPDATE CASCADE                   -- 장르 id 가 바뀌면 영화의 genre_id 도 따라 바뀐다
                   ON DELETE RESTRICT,                 -- 영화가 남아 있는 장르는 지울 수 없다
     title         TEXT    NOT NULL,
     release_date  TEXT    NOT NULL CHECK (date(release_date, '+0 days') IS release_date), -- [SQLite 전용] date()
@@ -78,10 +78,10 @@ CREATE TABLE movie (
 CREATE TABLE review (
     review_id   INTEGER PRIMARY KEY,
     member_id   INTEGER NOT NULL
-                REFERENCES member (member_id)
+                REFERENCES member (member_id)         -- FK review → member: NULL 불가, 삭제 CASCADE (ON UPDATE 미지정 = NO ACTION)
                 ON DELETE CASCADE,                    -- 회원 탈퇴(삭제) 시 그 회원의 리뷰도 함께 삭제
     movie_id    INTEGER NOT NULL
-                REFERENCES movie (movie_id)
+                REFERENCES movie (movie_id)           -- FK review → movie: NULL 불가, 삭제 CASCADE (ON UPDATE 미지정 = NO ACTION)
                 ON DELETE CASCADE,                    -- 영화가 삭제되면 리뷰도 의미가 없으므로 함께 삭제
     rating      INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),   -- 별점 1~5 정수
     content     TEXT,                                 -- 별점만 남기고 글은 비워도 된다 (NULL 허용)

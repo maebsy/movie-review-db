@@ -3,7 +3,7 @@
 `python scripts/run_all.py` 가 빈 DB 에 `01_schema.sql` → `02_seed.sql` 을 실행한 뒤, 아래 쿼리를 **순서대로** 실행한 실제 결과입니다.
 쿼리별 텍스트 결과(sqlite3 CLI 형식)는 같은 폴더의 `Qnn.txt` · `Bnn.txt` 파일에 있습니다.
 
-- SQLite 3.45.1
+- SQLite 3.46.1
 - 테이블 행 수: genre 10, member 15, movie 22, review 78 (모두 10행 이상)
 - `PRAGMA foreign_key_check` 위반 0건
 
@@ -22,9 +22,9 @@
 | [Q09](#q09--평균-별점-top-5-영화-리뷰-3개-이상만-동점이면-리뷰-많은-순) | 집계 (랭킹) | 평균 별점 TOP 5 영화 (리뷰 3개 이상만, 동점이면 리뷰 많은 순) | [Q09.txt](Q09.txt) |
 | [Q10](#q10--장르별-영화-수--리뷰-수--평균-별점-영화가-없는-장르도-포함) | 집계 | 장르별 영화 수 · 리뷰 수 · 평균 별점 (영화가 없는 장르도 포함) | [Q10.txt](Q10.txt) |
 | [Q11](#q11--회원별-리뷰-수--평균-준-별점--총-관람-시간분--활동량-순) | 집계 | 회원별 리뷰 수 · 평균 준 별점 · 총 관람 시간(분) — 활동량 순 | [Q11.txt](Q11.txt) |
-| [Q12](#q12--월별-리뷰-수와-평균-별점-추이) | 집계 | 월별 리뷰 수와 평균 별점 추이 | [Q12.txt](Q12.txt) |
+| [Q12](#q12--월별-리뷰-수와-평균-별점-추이) | 집계 (추가) | 월별 리뷰 수와 평균 별점 추이 | [Q12.txt](Q12.txt) |
 | [Q13](#q13--전체-리뷰-평균-별점보다-평균이-높은-영화) | 서브쿼리 | 전체 리뷰 평균 별점보다 평균이 높은 영화 | [Q13.txt](Q13.txt) |
-| [Q14](#q14--장르마다-평균-별점이-가장-높은-영화-동점이면-모두-표시) | 서브쿼리 (상관) | 장르마다 평균 별점이 가장 높은 영화 (동점이면 모두 표시) | [Q14.txt](Q14.txt) |
+| [Q14](#q14--장르마다-평균-별점이-가장-높은-영화-동점이면-모두-표시) | 서브쿼리 (상관·추가) | 장르마다 평균 별점이 가장 높은 영화 (동점이면 모두 표시) | [Q14.txt](Q14.txt) |
 | [Q15](#q15--2024-06-01-이후-리뷰가-없는-active-회원을-휴면dormant으로-전환) | 수정 (UPDATE) | 2024-06-01 이후 리뷰가 없는 ACTIVE 회원을 휴면(DORMANT)으로 전환 | [Q15.txt](Q15.txt) |
 | [Q16](#q16--탈퇴withdrawn-회원-삭제--그-회원의-리뷰는-on-delete-cascade-로-함께-삭제) | 삭제 (DELETE) | 탈퇴(WITHDRAWN) 회원 삭제 → 그 회원의 리뷰는 ON DELETE CASCADE 로 함께 삭제 | [Q16.txt](Q16.txt) |
 | [Q17](#q17--reviewmovie_id-인덱스-생성-전후-실행-계획-비교) | 인덱스 | review.movie_id 인덱스 생성 전/후 실행 계획 비교 | [Q17.txt](Q17.txt) |
@@ -357,7 +357,7 @@ ORDER BY review_count DESC, avg_given DESC;
 
 ### Q12 · 월별 리뷰 수와 평균 별점 추이
 
-`집계` · 원본: [`sql/03_queries.sql`](../sql/03_queries.sql)
+`집계 (추가)` · 원본: [`sql/03_queries.sql`](../sql/03_queries.sql)
 
 _[SQLite 전용] strftime('%Y-%m', …). MySQL: DATE_FORMAT(created_at, '%Y-%m'), PostgreSQL: to_char(created_at, 'YYYY-MM')_
 
@@ -418,10 +418,11 @@ ORDER BY avg_rating DESC, m.title;
 
 ### Q14 · 장르마다 평균 별점이 가장 높은 영화 (동점이면 모두 표시)
 
-`서브쿼리 (상관)` · 원본: [`sql/03_queries.sql`](../sql/03_queries.sql)
+`서브쿼리 (상관·추가)` · 원본: [`sql/03_queries.sql`](../sql/03_queries.sql)
 
 ```sql
 WITH movie_avg AS (                                   -- CTE: 영화별 평균을 이름 붙인 임시 결과로 만든다 (View 아님)
+    -- 1단계 기대 결과(리뷰가 있는 영화 20행 중 한 행): movie_id 1 | genre_id 2 | 기생충 | 4.714… | 7
     SELECT m.movie_id, m.genre_id, m.title,
            AVG(r.rating) AS avg_rating,
            COUNT(*)      AS review_count
@@ -434,10 +435,12 @@ SELECT g.name AS genre,
        ROUND(ma.avg_rating, 2) AS avg_rating,
        ma.review_count
 FROM movie_avg AS ma
-INNER JOIN genre AS g ON g.genre_id = ma.genre_id
+INNER JOIN genre AS g ON g.genre_id = ma.genre_id    -- 3단계 기대 결과: 기생충 행에 genre_id 2 → '드라마' 가 붙는다
 WHERE ma.avg_rating = (SELECT MAX(x.avg_rating)        -- 상관 서브쿼리: 바깥 행의 genre_id 마다 다시 계산된다
                        FROM movie_avg AS x
                        WHERE x.genre_id = ma.genre_id)
+-- 2단계 기대 결과: 바깥 행이 기생충(genre_id 2)이면 MAX = 4.75(서울의 봄) → 4.714… ≠ 4.75 라 기생충은 빠진다
+-- 4단계 기대 결과(정렬 후 11행 중 첫 행, 동점 2쌍 포함): 드라마 | 서울의 봄 | 4.75 | 4
 ORDER BY ma.avg_rating DESC, g.name;
 ```
 
